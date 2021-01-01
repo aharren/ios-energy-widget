@@ -15,4 +15,4 @@ Visualized data:
   - Battery state: current battery charge level as percentage
  
  - Bottom:
-   - Stacked values in 30-minutes intervals
+   - Stacked values in 15-minutes intervals
