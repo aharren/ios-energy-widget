@@ -6,9 +6,9 @@
 
 const C = {
   widget: {
-    size: {
-      width: 660,
-      height: 280,
+    preview: {
+      style: 1,
+      family: 'medium',
     },
     background: {
       gradient: [
@@ -185,6 +185,16 @@ function drawMultiSegmentDonut(dc, circle, segments, text) {
   }
 }
 
+function imageWithMultiSegmentDonut(size, circle, segments, text) {
+  const dc = new DrawContext();
+  dc.size = new Size(size.width, size.height);
+  dc.opaque = false;
+  dc.respectScreenScale = true
+
+  drawMultiSegmentDonut(dc, circle, segments, text);
+  return dc.getImage();
+}
+
 function drawMultiSegmentChart(dc, rect, segments, maxSum) {
   const w = rect.width / segments[0].values.length;
   const lr = w / 4;
@@ -198,6 +208,16 @@ function drawMultiSegmentChart(dc, rect, segments, maxSum) {
     }
     x += w;
   }
+}
+
+function imageWithMultiSegmentChart(size, rect, segments, maxSum) {
+  const dc = new DrawContext();
+  dc.size = new Size(size.width, size.height);
+  dc.opaque = false;
+  dc.respectScreenScale = true
+
+  drawMultiSegmentChart(dc, rect, segments, maxSum);
+  return dc.getImage();
 }
 
 //
@@ -214,16 +234,8 @@ const V = {
 // render the data
 //
 
-const dc = new DrawContext();
-dc.size = new Size(C.widget.size.width, C.widget.size.height);
-dc.opaque = false;
-dc.respectScreenScale = true
-
 // consumption mix --- photovoltaics consumption, battery consumption, grid consumption
-{
-  const x = 70;
-  const y = 70;
-
+function imageForConsumptionMix() {
   const segments = [
     { value: V.data.series.photovoltaics.consume.valuesSum, color: V.data.series.photovoltaics.consume.color },
     { value: V.data.series.battery.consume.valuesSum, color: V.data.series.battery.consume.color },
@@ -233,35 +245,32 @@ dc.respectScreenScale = true
   const sum = segments.reduce((sum, segment) => { return sum + segment.value }, 0.0);
   const maxValue = C.data.max.consumption;
 
-  drawMultiSegmentDonut(dc,
-    { x, y, radius: 63, lineWidth: 13, maxValue, color: new Color('444444', 0.5) },
+  return imageWithMultiSegmentDonut(
+    { width: 140, height: 140 },
+    { x: 70, y: 70, radius: 63, lineWidth: 13, maxValue, color: new Color('444444', 0.5) },
     segments,
     { text: sum.toFixed(1), fontSize: 35, color: Color.white() }
   );
-}
+};
 
 // grid feed
-{
-  const x = 70 + (C.widget.size.width - 2 * 70) / 3;
-  const y = 70;
+function imageForGridFeed() {
   const sum = V.data.series.grid.feed.valuesSum;
   const segments = [
     { value: sum, color: V.data.series.grid.feed.color },
   ];
   const maxValue = C.data.max.feed;
 
-  drawMultiSegmentDonut(dc,
-    { x, y, radius: 63, lineWidth: 13, maxValue, color: new Color('444444', 0.5) },
+  return imageWithMultiSegmentDonut(
+    { width: 140, height: 140 },
+    { x: 70, y: 70, radius: 63, lineWidth: 13, maxValue, color: new Color('444444', 0.5) },
     segments,
     { text: sum.toFixed(1), fontSize: 35, color: V.data.series.grid.feed.color }
   );
 }
 
 // production mix --- photovoltaics consumption, battery charge, grid feed
-{
-  const x = C.widget.size.width - (70 + (C.widget.size.width - 2 * 70) / 3);
-  const y = 70;
-
+function imageForProductionMix() {
   const segments = [
     { value: V.data.series.photovoltaics.consume.valuesSum, color: V.data.series.photovoltaics.consume.color },
     { value: V.data.series.battery.charge.valuesSum, color: V.data.series.battery.charge.color },
@@ -270,33 +279,34 @@ dc.respectScreenScale = true
   const sum = segments.reduce((sum, segment) => { return sum + segment.value }, 0.0);
   const maxValue = sum;
 
-  drawMultiSegmentDonut(dc,
-    { x, y, radius: 63, lineWidth: 13, maxValue, color: new Color('444444', 0.5) },
+  return imageWithMultiSegmentDonut(
+    { width: 140, height: 140 },
+    { x: 70, y: 70, radius: 63, lineWidth: 13, maxValue, color: new Color('444444', 0.5) },
     segments,
     { text: sum.toFixed(1), fontSize: 35, color: Color.white() }
   );
 }
 
 // battery charge level
-{
-  const x = C.widget.size.width - 70;
-  const y = 70;
+function imageForBatteryChargeLevel() {
   const level = V.data.series.battery.level.valuesLast;
   const segments = [
     { value: level, color: V.data.series.battery.level.color },
   ];
 
-  drawMultiSegmentDonut(dc,
-    { x, y, radius: 63, lineWidth: 13, maxValue: 100.0, color: new Color('444444', 0.5) },
+  return imageWithMultiSegmentDonut(
+    { width: 140, height: 140 },
+    { x: 70, y: 70, radius: 63, lineWidth: 13, maxValue: 100.0, color: new Color('444444', 0.5) },
     segments,
     { text: level.toFixed(0) + '%', fontSize: 35, color: V.data.series.battery.level.color }
   );
 }
 
 // timeline --- consumption, grid feed, battery charge
-{
-  drawMultiSegmentChart(dc,
-    { x: 0, y: 180, width: C.widget.size.width, height: 100 },
+function imageForProductionConsumptionMixTimeline(size) {
+  return imageWithMultiSegmentChart(
+    size,
+    { x: 0, y: 0, width: size.width, height: size.height },
     [
       V.data.series.grid.feed,
       V.data.series.battery.charge,
@@ -319,11 +329,83 @@ gradient.colors = C.widget.background.gradient;
 gradient.locations = C.widget.background.gradient.map((element, index) => index);
 widget.backgroundGradient = gradient;
 
-const stack = widget.addStack();
-stack.addImage(dc.getImage());
+const style = parseInt(args.widgetParameter) || C.widget.preview.style;
+const widgetFamily = config.widgetFamily || C.widget.preview.family;
+
+switch (widgetFamily) {
+  default:
+  case 'small':
+    switch (style) {
+      default:
+        {
+          let stack;
+          stack = widget.addStack();
+          stack.layoutHorizontally();
+          stack.addImage(imageForConsumptionMix());
+          stack.addSpacer(14);
+          stack.addImage(imageForGridFeed());
+          widget.addSpacer(14);
+          stack = widget.addStack();
+          stack.addImage(imageForProductionMix());
+          stack.addSpacer(14);
+          stack.addImage(imageForBatteryChargeLevel());
+          break;
+        }
+    }
+    break;
+  case 'medium':
+    switch (style) {
+      default:
+      case 1: {
+        let stack;
+        stack = widget.addStack();
+        stack.layoutHorizontally();
+        stack.addImage(imageForConsumptionMix());
+        stack.addSpacer(14);
+        stack.addImage(imageForGridFeed());
+        stack.addSpacer(14);
+        stack.addImage(imageForProductionMix());
+        stack.addSpacer(14);
+        stack.addImage(imageForBatteryChargeLevel());
+        stack = widget.addStack();
+        stack.layoutVertically();
+        stack.addImage(imageForProductionConsumptionMixTimeline({ width: 660, height: 140 }));
+        break;
+      }
+      case 2: {
+        let stack;
+        stack = widget.addStack();
+        stack.layoutHorizontally();
+        stack.addImage(imageForConsumptionMix());
+        stack.addSpacer(14);
+        stack.addImage(imageForGridFeed());
+        stack.addSpacer(14);
+        stack.addImage(imageForProductionMix());
+        stack.addSpacer(14);
+        stack.addImage(imageForBatteryChargeLevel());
+        break;
+      }
+      case 3: {
+        let stack;
+        stack = widget.addStack();
+        stack.addImage(imageForProductionConsumptionMixTimeline({ width: 660, height: 280 }));
+        break;
+      }
+    }
+    break;
+}
 
 if (!config.runsInWidget) {
-  await widget.presentMedium();
+  switch (widgetFamily) {
+    default:
+    case 'small':
+      await widget.presentSmall();
+      break;
+    case 'medium':
+      await widget.presentMedium();
+      break;
+  }
 }
+
 Script.setWidget(widget);
 Script.complete();
