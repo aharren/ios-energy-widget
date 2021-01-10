@@ -10,21 +10,21 @@ Styles - selected via widget parameter:
 
 - Small:
 
-  - Default style:
+  - Single style; style parameter is ignored
 
     ![](example-small-0.png)
 
 - Medium:
 
-  - Style 1:
+  - style=1
 
     ![](example-medium-1.png)
 
-  - Style 2:
+  - style=2
 
     ![](example-medium-2.png)
 
-  - Style 3:
+  - style=3
 
     ![](example-medium-3.png)
 
@@ -38,3 +38,5 @@ Visualized data:
  
  - Timeline:
    - Stacked values in 15-minutes intervals
+
+Widget parameters are passed as key1=value1;key2=value2;...

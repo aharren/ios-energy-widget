@@ -64,6 +64,15 @@ const C = {
 };
 
 //
+// widget parameters --- format is key1=value1;key2=value2;...
+//
+
+const parameters = (args.widgetParameter || '').toLowerCase().split(';').reduce((obj, element) => { const keyvalue = element.split('='); obj[keyvalue[0]] = keyvalue[1]; return obj; }, {});
+// parameters = {
+//   style : <number>, // visual style of the widget
+// }
+
+//
 // query handling
 //
 
@@ -329,7 +338,7 @@ gradient.colors = C.widget.background.gradient;
 gradient.locations = C.widget.background.gradient.map((element, index) => index);
 widget.backgroundGradient = gradient;
 
-const style = parseInt(args.widgetParameter) || C.widget.preview.style;
+const style = parseInt(parameters.style) || C.widget.preview.style;
 const widgetFamily = config.widgetFamily || C.widget.preview.family;
 
 switch (widgetFamily) {
@@ -357,6 +366,7 @@ switch (widgetFamily) {
     switch (style) {
       default:
       case 1: {
+        // widget parameter: style=1
         let stack;
         stack = widget.addStack();
         stack.layoutHorizontally();
@@ -373,6 +383,7 @@ switch (widgetFamily) {
         break;
       }
       case 2: {
+        // widget parameter: style=2
         let stack;
         stack = widget.addStack();
         stack.layoutHorizontally();
@@ -386,6 +397,7 @@ switch (widgetFamily) {
         break;
       }
       case 3: {
+        // widget parameter: style=3
         let stack;
         stack = widget.addStack();
         stack.addImage(imageForProductionConsumptionMixTimeline({ width: 660, height: 280 }));
