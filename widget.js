@@ -7,8 +7,12 @@
 const C = {
   widget: {
     preview: {
-      style: 1,
-      family: 'medium',
+      parameters: {
+        style: 1,
+      },
+      widget: {
+        family: 'medium',
+      },
     },
     background: {
       gradient: [
@@ -64,13 +68,22 @@ const C = {
 };
 
 //
-// widget parameters --- format is key1=value1;key2=value2;...
+// runtime
 //
 
-const parameters = (args.widgetParameter || '').toLowerCase().split(';').reduce((obj, element) => { const keyvalue = element.split('='); obj[keyvalue[0]] = keyvalue[1]; return obj; }, {});
-// parameters = {
-//   style : <number>, // visual style of the widget
-// }
+const R = {
+  // widget parameters --- format is key1=value1;key2=value2;...
+  parameters: (() => {
+    const p = (args.widgetParameter || '').toLowerCase().split(';').reduce((obj, element) => { const keyvalue = element.split('='); obj[keyvalue[0]] = keyvalue[1]; return obj; }, {});
+    return {
+      // style=<number> --- visual style of the widget
+      style: parseInt(p.style) || C.widget.preview.parameters.style,
+    }
+  })(),
+  widget: {
+    family: config.widgetFamily || C.widget.preview.widget.family,
+  },
+}
 
 //
 // query handling
@@ -338,13 +351,10 @@ gradient.colors = C.widget.background.gradient;
 gradient.locations = C.widget.background.gradient.map((element, index) => index);
 widget.backgroundGradient = gradient;
 
-const style = parseInt(parameters.style) || C.widget.preview.style;
-const widgetFamily = config.widgetFamily || C.widget.preview.family;
-
-switch (widgetFamily) {
+switch (R.widget.family) {
   default:
   case 'small':
-    switch (style) {
+    switch (R.parameters.style) {
       default:
         {
           let stack;
@@ -363,7 +373,7 @@ switch (widgetFamily) {
     }
     break;
   case 'medium':
-    switch (style) {
+    switch (R.parameters.style) {
       default:
       case 1: {
         // widget parameter: style=1
@@ -408,7 +418,7 @@ switch (widgetFamily) {
 }
 
 if (!config.runsInWidget) {
-  switch (widgetFamily) {
+  switch (R.widget.family) {
     default:
     case 'small':
       await widget.presentSmall();
