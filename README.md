@@ -12,21 +12,21 @@ Styles - selected via widget parameter:
 
   - Single style; style parameter is ignored
 
-    ![](example-small-0.png)
+    ![](readme-assets/example-small-0.png)
 
 - Medium:
 
   - style=1
 
-    ![](example-medium-1.png)
+    ![](readme-assets/example-medium-1.png)
 
   - style=2
 
-    ![](example-medium-2.png)
+    ![](readme-assets/example-medium-2.png)
 
   - style=3
 
-    ![](example-medium-3.png)
+    ![](readme-assets/example-medium-3.png)
 
 Visualized data:
 
