@@ -30,31 +30,31 @@ const C = {
     series: {
       photovoltaics: {
         consume: {
-          query: 'SELECT difference(last("value")) / 1000 FROM "photovoltaics-energy-counter-consumption" WHERE time >= now() - 24h AND time <= now() GROUP BY time(15m) fill(0)', // kWh
+          query: 'SELECT difference(last("value")) / 1000 FROM "photovoltaics-energy-counter-consumption" WHERE ${time-range} GROUP BY ${time-interval} fill(0)', // kWh
           color: Color.yellow(),
         },
       },
       battery: {
         charge: {
-          query: 'SELECT difference(last("value")) / 1000 FROM "battery-energy-counter-charge" WHERE time >= now() - 24h AND time <= now() GROUP BY time(15m) fill(0)', // kWh
+          query: 'SELECT difference(last("value")) / 1000 FROM "battery-energy-counter-charge" WHERE ${time-range} GROUP BY ${time-interval} fill(0)', // kWh
           color: new Color('#00aaee'),
         },
         consume: {
-          query: 'SELECT difference(last("value")) / 1000 FROM "battery-energy-counter-discharge" WHERE time >= now() - 24h AND time <= now() GROUP BY time(15m) fill(0)', // kWh
+          query: 'SELECT difference(last("value")) / 1000 FROM "battery-energy-counter-discharge" WHERE ${time-range} GROUP BY ${time-interval} fill(0)', // kWh
           color: Color.orange(),
         },
         level: {
-          query: 'SELECT last("value") FROM "battery-charge-level" WHERE time >= now() - 24h AND time <= now() GROUP BY time(15m) fill(0)', // percentage
+          query: 'SELECT last("value") FROM "battery-charge-level" WHERE ${time-range} GROUP BY ${time-interval} fill(previous)', // percentage
           color: Color.orange(),
         }
       },
       grid: {
         feed: {
-          query: 'SELECT difference(last("value")) / 1000 FROM "grid-energy-counter-out" WHERE time >= now() - 24h AND time <= now() GROUP BY time(15m) fill(0)', // kWh
+          query: 'SELECT difference(last("value")) / 1000 FROM "grid-energy-counter-out" WHERE ${time-range} GROUP BY ${time-interval} fill(0)', // kWh
           color: Color.green(),
         },
         consume: {
-          query: 'SELECT difference(last("value")) / 1000 FROM "grid-energy-counter-in" WHERE time >= now() - 24h AND time <= now() GROUP BY time(15m) fill(0)', // kWh
+          query: 'SELECT difference(last("value")) / 1000 FROM "grid-energy-counter-in" WHERE ${time-range} GROUP BY ${time-interval} fill(0)', // kWh
           color: Color.red(),
         },
       },
@@ -83,6 +83,15 @@ const R = {
   widget: {
     family: config.widgetFamily || C.widget.preview.widget.family,
   },
+  time: (() => {
+    const t = new Date();
+    const now = new Date(t.getFullYear(), t.getMonth(), t.getDate(), t.getHours(), Math.floor(t.getMinutes() / 15) * 15, 0);
+    return {
+      timestampNow: now.getTime(),
+      timestampNowMinus24h: now.getTime() - 1000 * 60 * 60 * 24,
+      delta15min: 1000 * 60 * 15,
+    }
+  })(),
 }
 
 //
@@ -96,7 +105,11 @@ async function getSeriesValues(series) {
       return segment.replace(/[^0-9A-Za-z]/g, (c) => '%' + c.charCodeAt(0).toString(16).padStart(2, '0'));
     }
 
-    const url = `${C.data.server.url}/api/datasources/proxy/1/query?db=${escapeURLSegment(C.data.database)}&epoch=ms&q=${escapeURLSegment(queries.join(';'))}`;
+    const q = queries.join(';')
+      .replace(/\$\{time\-range\}/gi, ` (time >= ${R.time.timestampNowMinus24h - R.time.delta15min * 2}ms AND time <= ${R.time.timestampNow}ms) `)
+      .replace(/\$\{time\-interval\}/gi, ` time(15m) `)
+      ;
+    const url = `${C.data.server.url}/api/datasources/proxy/1/query?db=${escapeURLSegment(C.data.database)}&epoch=ms&q=${escapeURLSegment(q)}`;
 
     const request = new Request(url);
     request.headers = {
@@ -126,8 +139,16 @@ async function getSeriesValues(series) {
 
   function transformResults(series, results) {
     function transformResultArray(results) {
-      const a = results.map(element => element[1] <= 0 ? 0 : element[1]);
-      a.pop();
+      const timestampStart = R.time.timestampNowMinus24h;
+      const timestampEnd = R.time.timestampNow;
+      const r = results.reduce((obj, element) => { obj[element[0]] = element[1]; return obj; }, {});
+      const a = new Array(96).fill(0);
+      for (let i = 0, timestamp = R.time.timestampNowMinus24h; i < 96; i++, timestamp += R.time.delta15min) {
+        if (timestamp >= timestampStart && timestamp < timestampEnd) {
+          const value = r[timestamp] || 0;
+          a[i] = value > 0 ? value : 0;
+        }
+      }
       return a;
     }
 
