@@ -89,6 +89,7 @@ const R = {
     return {
       timestampNow: now.getTime(),
       timestampNowMinus24h: now.getTime() - 1000 * 60 * 60 * 24,
+      timestampToday0h: (new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0)).getTime(),
       delta15min: 1000 * 60 * 15,
     }
   })(),
@@ -238,13 +239,14 @@ function imageWithMultiSegmentDonut(size, circle, segments, text) {
   return dc.getImage();
 }
 
-function drawMultiSegmentChart(dc, rect, segments, maxSum) {
+function drawMultiSegmentChart(dc, rect, segments, maxSum, index0) {
   const w = rect.width / segments[0].values.length;
   const lr = w / 4;
   for (let i = 0, x = rect.x; i < segments[0].values.length; i++) {
+    const ri = (i + index0) % segments[0].values.length;
     let baseValue = rect.height;
     for (let j = segments.length - 1; j >= 0; j--) {
-      const value = (segments[j].values[i] / maxSum) * rect.height;
+      const value = (segments[j].values[ri] / maxSum) * rect.height;
       dc.setFillColor(segments[j].color);
       baseValue -= value;
       dc.fillRect(new Rect(x + lr, rect.y + baseValue, w - lr, value));
@@ -253,13 +255,13 @@ function drawMultiSegmentChart(dc, rect, segments, maxSum) {
   }
 }
 
-function imageWithMultiSegmentChart(size, rect, segments, maxSum) {
+function imageWithMultiSegmentChart(size, rect, segments, maxSum, index0) {
   const dc = new DrawContext();
   dc.size = new Size(size.width, size.height);
   dc.opaque = false;
   dc.respectScreenScale = true
 
-  drawMultiSegmentChart(dc, rect, segments, maxSum);
+  drawMultiSegmentChart(dc, rect, segments, maxSum, index0);
   return dc.getImage();
 }
 
@@ -357,7 +359,9 @@ function imageForProductionConsumptionMixTimeline(size) {
       V.data.series.battery.consume,
       V.data.series.photovoltaics.consume,
     ],
-    C.data.max.sumPerSegment
+    C.data.max.sumPerSegment,
+    // let the timeline start at 0:00 today
+    (R.time.timestampToday0h - R.time.timestampNowMinus24h) / R.time.delta15min
   );
 }
 
