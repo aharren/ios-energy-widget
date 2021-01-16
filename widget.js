@@ -143,11 +143,20 @@ async function getSeriesValues(series) {
       const timestampStart = R.time.timestampNowMinus24h;
       const timestampEnd = R.time.timestampNow;
       const r = results.reduce((obj, element) => { obj[element[0]] = element[1]; return obj; }, {});
-      const a = new Array(96).fill(0);
+      const a = {
+        all: new Array(96).fill(0),
+        today: new Array(96).fill(0),
+        yesterday: new Array(96).fill(0),
+      };
       for (let i = 0, timestamp = R.time.timestampNowMinus24h; i < 96; i++, timestamp += R.time.delta15min) {
-        if (timestamp >= timestampStart && timestamp < timestampEnd) {
-          const value = r[timestamp] || 0;
-          a[i] = value > 0 ? value : 0;
+        const value = r[timestamp] > 0 ? r[timestamp] : 0;
+        if (timestamp >= timestampStart) {
+          a.all[i] = value;
+          if (timestamp < R.time.timestampToday0h) {
+            a.yesterday[i] = value;
+          } else if (timestamp < timestampEnd) {
+            a.today[i] = value;
+          }
         }
       }
       return a;
@@ -164,8 +173,8 @@ async function getSeriesValues(series) {
             values[k][sk] = {
               values: r,
               color: series[k][sk].color,
-              valuesLast: r[r.length - 1],
-              valuesSum: r.reduce((sum, element) => { return sum + element }, 0.0),
+              valuesLast: r.all[r.all.length - 1],
+              valuesSum: r.all.reduce((sum, element) => { return sum + element }, 0.0),
             };
           }
         }
@@ -353,11 +362,18 @@ function imageForProductionConsumptionMixTimeline(size) {
     size,
     { x: 0, y: 0, width: size.width, height: size.height },
     [
-      V.data.series.grid.feed,
-      V.data.series.battery.charge,
-      V.data.series.grid.consume,
-      V.data.series.battery.consume,
-      V.data.series.photovoltaics.consume,
+      // today
+      { values: V.data.series.grid.feed.values.today, color: V.data.series.grid.feed.color },
+      { values: V.data.series.battery.charge.values.today, color: V.data.series.battery.charge.color },
+      { values: V.data.series.grid.consume.values.today, color: V.data.series.grid.consume.color },
+      { values: V.data.series.battery.consume.values.today, color: V.data.series.battery.consume.color },
+      { values: V.data.series.photovoltaics.consume.values.today, color: V.data.series.photovoltaics.consume.color },
+      // yesterday
+      { values: V.data.series.grid.feed.values.yesterday, color: new Color(V.data.series.grid.feed.color.hex, 0.5) },
+      { values: V.data.series.battery.charge.values.yesterday, color: new Color(V.data.series.battery.charge.color.hex, 0.5) },
+      { values: V.data.series.grid.consume.values.yesterday, color: new Color(V.data.series.grid.consume.color.hex, 0.5) },
+      { values: V.data.series.battery.consume.values.yesterday, color: new Color(V.data.series.battery.consume.color.hex, 0.5) },
+      { values: V.data.series.photovoltaics.consume.values.yesterday, color: new Color(V.data.series.photovoltaics.consume.color.hex, 0.5) },
     ],
     C.data.max.sumPerSegment,
     // let the timeline start at 0:00 today
