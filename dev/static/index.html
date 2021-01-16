@@ -1,0 +1,70 @@
+<html>
+
+<head>
+  <style>
+    body {
+      background-color: #404040;
+      color: #aaaaaa;
+      font-family: sans-serif;
+    }
+
+    div {
+      padding: 10px;
+    }
+
+    #image {
+      border-radius: 30px;
+    }
+
+    #console {
+      width: 100%
+    }
+  </style>
+</head>
+
+<body>
+  <div>
+    <img id="image" src="" />
+  </div>
+
+  <div>
+    <pre id="console"></pre>
+  </div>
+
+  <script type="text/javascript">
+    function log(type, text) {
+      document.getElementById("console").innerText += `${(new Date()).toISOString()} C ${type} ${text}\n`;
+    }
+
+    // send a request to run the widget and to retrieve its image and console output
+    log('I', 'Sending request ...');
+    const request = new XMLHttpRequest();
+    request.onreadystatechange = () => {
+      if (request.readyState === 4) {
+        log('I', 'Retrieving response ...');
+        log('I', 'Response: status code = ' + request.status);
+        if (request.status === 200) {
+          // the server returns a JSON object with the following structure:
+          // {
+          //   console: <array with console messages>,
+          //   image: {
+          //     data: <base64-encoded PNG image data>,
+          //     width: <width of the image>,
+          //     height: <height of the image>,
+          // }
+          const response = JSON.parse(request.responseText);
+          document.getElementById("console").innerText += response.console.join('\n');
+          document.getElementById('image').src = 'data:image/png;base64,' + response.image.data;
+          document.getElementById('image').style.width = response.image.width / 2.0;
+          document.getElementById('image').style.height = response.image.height / 2.0;
+        } else {
+          log('E', request.responseText);
+        }
+      }
+    };
+    request.open("GET", "/widget", true);
+    request.send();
+  </script>
+</body>
+
+</html>
