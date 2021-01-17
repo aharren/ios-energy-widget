@@ -16,8 +16,8 @@ const C = {
     },
     background: {
       gradient: [
-        new Color('#181818'),
-        new Color('#080808'),
+        { location: 0, color: new Color('#181818') },
+        { location: 1, color: new Color('#080808') },
       ],
     },
   },
@@ -388,8 +388,8 @@ function imageForProductionConsumptionMixTimeline(size) {
 const widget = new ListWidget();
 
 const gradient = new LinearGradient()
-gradient.colors = C.widget.background.gradient;
-gradient.locations = C.widget.background.gradient.map((element, index) => index);
+gradient.colors = C.widget.background.gradient.map((element) => element.color);
+gradient.locations = C.widget.background.gradient.map((element) => element.location);
 widget.backgroundGradient = gradient;
 
 switch (R.widget.family) {
