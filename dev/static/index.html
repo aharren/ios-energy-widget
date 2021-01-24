@@ -3,7 +3,7 @@
 <head>
   <style>
     body {
-      background-color: #404040;
+      background-color: #202020;
       color: #aaaaaa;
       font-family: sans-serif;
     }
@@ -16,7 +16,11 @@
       border-radius: 5px;
     }
 
-    #console {
+    #console-local {
+      width: 100%
+    }
+
+    #console-remote {
       width: 100%
     }
   </style>
@@ -24,16 +28,20 @@
 
 <body>
   <div>
+    <pre id="console-local"></pre>
+  </div>
+
+  <div>
     <img id="image" src="" />
   </div>
 
   <div>
-    <pre id="console"></pre>
+    <pre id="console-remote"></pre>
   </div>
 
   <script type="text/javascript">
     function log(type, text) {
-      document.getElementById("console").innerText += `${(new Date()).toISOString()} C ${type} ${text}\n`;
+      document.getElementById("console-local").innerText += `${(new Date()).toISOString()} C ${type} ${text}\n`;
     }
 
     // send a request to run the widget and to retrieve its image and console output
@@ -53,7 +61,7 @@
           //     height: <height of the image>,
           // }
           const response = JSON.parse(request.responseText);
-          document.getElementById("console").innerText += response.console.join('\n');
+          document.getElementById("console-remote").innerText += response.console.join('\n');
           document.getElementById('image').src = 'data:image/png;base64,' + response.image.data;
           document.getElementById('image').style.width = response.image.width / response.image.scale;
           document.getElementById('image').style.height = response.image.height / response.image.scale;
