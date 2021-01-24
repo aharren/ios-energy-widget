@@ -242,7 +242,7 @@ class DrawContext {
           return { x: 0, y: 0 };
         case 'center':
           const metrics = this._context.measureText(text);
-          return { x: (rect.width - metrics.width / _.scale) / 2, y: 4 };
+          return { x: (rect.width - metrics.width / _.scale) / 2, y: 3 };
       }
     })();
     this._context.fillText(text, (rect.x + offsets.x) * _.scale, (rect.y + offsets.y) * _.scale);
