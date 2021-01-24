@@ -130,7 +130,9 @@ async function getSeriesValues(series) {
       if (series.hasOwnProperty(k)) {
         for (const sk in series[k]) {
           if (series[k].hasOwnProperty(sk)) {
-            queries.push(series[k][sk].query);
+            if (series[k][sk].query) {
+              queries.push(series[k][sk].query);
+            }
           }
         }
       }
@@ -169,7 +171,8 @@ async function getSeriesValues(series) {
         values[k] = {};
         for (const sk in series[k]) {
           if (series[k].hasOwnProperty(sk)) {
-            const r = transformResultArray(results[i++].series[0].values);
+            const ra = series[k][sk].query ? results[i++].series[0].values : [];
+            const r = transformResultArray(ra);
             values[k][sk] = {
               values: r,
               color: series[k][sk].color,
