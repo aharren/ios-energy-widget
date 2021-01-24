@@ -13,7 +13,7 @@
     }
 
     #image {
-      border-radius: 30px;
+      border-radius: 5px;
     }
 
     #console {
@@ -55,8 +55,9 @@
           const response = JSON.parse(request.responseText);
           document.getElementById("console").innerText += response.console.join('\n');
           document.getElementById('image').src = 'data:image/png;base64,' + response.image.data;
-          document.getElementById('image').style.width = response.image.width / 2.0;
-          document.getElementById('image').style.height = response.image.height / 2.0;
+          document.getElementById('image').style.width = response.image.width / response.image.scale;
+          document.getElementById('image').style.height = response.image.height / response.image.scale;
+          document.getElementById('image').style.borderRadius = (response.image.borderRadius / response.image.scale) + 'px';
         } else {
           log('E', request.responseText);
         }

@@ -16,6 +16,8 @@ const _ = {
     },
   },
 
+  scale: 3,
+
   log: (layer, type, text) => {
     _.output.console.push(`${new Date().toISOString()} ${layer} ${type} ${typeof text === 'object' ? JSON.stringify(text) : text}`);
   },
@@ -152,22 +154,23 @@ class Font {
   constructor(name, size) {
     this._name = name;
     this._size = size;
+    this._sizeType = 'px';
   }
 
   static systemFont(size) {
-    return new Font('SF Pro', `${size}px`);
+    return new Font('SF Pro', `${size}`);
   }
 
   // internals
   _font() {
-    return `${this._size} ${this._name}`;
+    return `${this._size * _.scale}${this._sizeType} ${this._name}`;
   }
 }
 
 // DrawContext
 class DrawContext {
   constructor() {
-    this._size = new Size(800, 800);
+    this._size = new Size(1024, 1024);
     this._opaque = true;
     this._respectScreenScale = false;
     this._textAlignment = 'left';
@@ -196,10 +199,10 @@ class DrawContext {
     const ry = rect.height / 2;
     const x = rect.x + rx;
     const y = rect.y + ry;
-    this._context.lineWidth = this._lineWidth;
+    this._context.lineWidth = this._lineWidth * _.scale;
     this._context.strokeStyle = this._strokeColor._rgba();
     this._context.beginPath();
-    this._context.ellipse(x, y, rx, ry, 0, 0, 2 * Math.PI);
+    this._context.ellipse(x * _.scale, y * _.scale, rx * _.scale, ry * _.scale, 0, 0, 2 * Math.PI);
     this._context.stroke();
   }
   fillEllipse(rect) {
@@ -207,16 +210,16 @@ class DrawContext {
     const ry = rect.height / 2;
     const x = rect.x + rx;
     const y = rect.y + ry;
-    this._context.lineWidth = this._lineWidth;
+    this._context.lineWidth = this._lineWidth * _.scale;
     this._context.fillStyle = this._fillColor._rgba();
     this._context.beginPath();
-    this._context.ellipse(x, y, rx, ry, 0, 0, 2 * Math.PI);
+    this._context.ellipse(x * _.scale, y * _.scale, rx * _.scale, ry * _.scale, 0, 0, 2 * Math.PI);
     this._context.fill();
   }
   fillRect(rect) {
     this._context.lineWidth = this._lineWidth;
     this._context.fillStyle = this._fillColor._rgba();
-    this._context.fillRect(rect.x, rect.y, rect.width, rect.height);
+    this._context.fillRect(rect.x * _.scale, rect.y * _.scale, rect.width * _.scale, rect.height * _.scale);
   }
   setTextAlignedCenter() {
     this._textAlignment = 'center';
@@ -231,7 +234,7 @@ class DrawContext {
     this._context.textAlign = 'start';
     this._context.textBaseline = 'top';
     this._context.font = this._font._font();
-    this._context.lineWidth = this._lineWidth;
+    this._context.lineWidth = this._lineWidth * _.scale;
     this._context.fillStyle = this._textColor._rgba();
     const offsets = (() => {
       switch (this._textAlignment) {
@@ -239,10 +242,10 @@ class DrawContext {
           return { x: 0, y: 0 };
         case 'center':
           const metrics = this._context.measureText(text);
-          return { x: (rect.width - metrics.width) / 2, y: 0 };
+          return { x: (rect.width - metrics.width / _.scale) / 2, y: 4 };
       }
     })();
-    this._context.fillText(text, rect.x + offsets.x, rect.y + offsets.y);
+    this._context.fillText(text, (rect.x + offsets.x) * _.scale, (rect.y + offsets.y) * _.scale);
   }
   getImage() {
     return {
@@ -254,7 +257,7 @@ class DrawContext {
   // internals
   get _canvas() {
     if (!this.__canvas) {
-      this.__canvas = _.lib.canvas.createCanvas(this._size.width, this._size.height);
+      this.__canvas = _.lib.canvas.createCanvas(this._size.width * _.scale, this._size.height * _.scale);
     }
     return this.__canvas;
   }
@@ -293,7 +296,8 @@ class ListWidget {
   constructor() {
     this._objects = [];
     this._family = 'small';
-    this._padding = { top: 20, left: 20 };
+    this._borderRadius = 17;
+    this._padding = { top: 17, left: 17 };
   }
 
   addStack() {
@@ -307,9 +311,11 @@ class ListWidget {
 
   presentSmall() {
     this._family = 'small';
+    this._borderRadius = 17;
   }
   presentMedium() {
     this._family = 'medium';
+    this._borderRadius = 20;
   }
 
   set backgroundGradient(gradient) {
@@ -321,9 +327,9 @@ class ListWidget {
     switch (this._family) {
       default:
       case 'small':
-        return new Size(320, 320);
+        return new Size(168 * _.scale, 168 * _.scale);
       case 'medium':
-        return new Size(700, 320);
+        return new Size(358 * _.scale, 168 * _.scale);
     }
   }
   _renderAsImage() {
@@ -340,7 +346,7 @@ class ListWidget {
       context.fillRect(0, 0, size.width, size.height);
     }
 
-    const spacing = { x: 10, y: 10 };
+    const spacing = { x: 0, y: 0 };
     let x = this._padding.left;
     let y = this._padding.top;
     for (let i = 0; i < this._objects.length; i++) {
@@ -366,7 +372,7 @@ class ListWidget {
                   x += column.size;
                   break;
                 case 'image':
-                  context.drawImage(column.image.canvas, x, y);
+                  context.drawImage(column.image.canvas, x * _.scale, y * _.scale);
                   x += column.image.size.width;
                   height = Math.max(height, column.image.size.height);
                   break;
@@ -410,6 +416,8 @@ class Script {
     const size = this._widget._imageSize;
     _.output.image.width = size.width;
     _.output.image.height = size.height;
+    _.output.image.scale = _.scale;
+    _.output.image.borderRadius = this._widget._borderRadius * _.scale;
   }
 }
 
