@@ -337,6 +337,24 @@ class ListWidget {
     const canvas = _.lib.canvas.createCanvas(size.width, size.height);
     const context = canvas.getContext('2d');
 
+    const corners = [
+      { x: 0, y: 0, r: this._borderRadius * _.scale },
+      { x: size.width, y: 0, r: this._borderRadius * _.scale },
+      { x: size.width, y: size.height, r: this._borderRadius * _.scale },
+      { x: 0, y: size.height, r: this._borderRadius * _.scale },
+    ];
+    context.beginPath();
+    context.moveTo(corners[0].x, corners[0].y + corners[0].r);
+    context.quadraticCurveTo(corners[0].x, corners[0].y, corners[0].x + corners[0].r, corners[0].y);
+    context.lineTo(corners[1].x - corners[1].r, corners[1].y);
+    context.quadraticCurveTo(corners[1].x, corners[1].y, corners[1].x, corners[1].y + corners[1].r);
+    context.lineTo(corners[2].x, corners[2].y - corners[2].r);
+    context.quadraticCurveTo(corners[2].x, corners[2].y, corners[2].x - corners[2].r, corners[2].y);
+    context.lineTo(corners[3].x + corners[3].r, corners[3].y);
+    context.quadraticCurveTo(corners[3].x, corners[3].y, corners[3].x, corners[3].y - corners[3].r);
+    context.closePath();
+    context.clip();
+
     if (this._backgroundGradient) {
       const gradient = context.createLinearGradient(0, 0, 0, size.height);
       for (let i = 0; i < this._backgroundGradient._colors.length; i++) {
@@ -417,7 +435,6 @@ class Script {
     _.output.image.width = size.width;
     _.output.image.height = size.height;
     _.output.image.scale = _.scale;
-    _.output.image.borderRadius = this._widget._borderRadius * _.scale;
   }
 }
 

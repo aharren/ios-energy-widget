@@ -12,10 +12,6 @@
       padding: 10px;
     }
 
-    #image {
-      border-radius: 5px;
-    }
-
     #console-local {
       width: 100%
     }
@@ -65,7 +61,6 @@
           document.getElementById('image').src = 'data:image/png;base64,' + response.image.data;
           document.getElementById('image').style.width = response.image.width / response.image.scale;
           document.getElementById('image').style.height = response.image.height / response.image.scale;
-          document.getElementById('image').style.borderRadius = (response.image.borderRadius / response.image.scale) + 'px';
         } else {
           log('E', request.responseText);
         }
