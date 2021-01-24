@@ -289,7 +289,7 @@ const V = {
 //
 
 // consumption mix --- photovoltaics consumption, battery consumption, grid consumption
-function imageForConsumptionMix() {
+function imageForConsumptionMix(size) {
   const segments = [
     { value: V.data.series.photovoltaics.consume.valuesSum, color: V.data.series.photovoltaics.consume.color },
     { value: V.data.series.battery.consume.valuesSum, color: V.data.series.battery.consume.color },
@@ -300,15 +300,15 @@ function imageForConsumptionMix() {
   const maxValue = C.data.max.consumption;
 
   return imageWithMultiSegmentDonut(
-    { width: 140, height: 140 },
-    { x: 70, y: 70, radius: 63, lineWidth: 13, maxValue, color: new Color('444444', 0.5) },
+    size,
+    { x: size.width / 2, y: size.height / 2, radius: (size.width - 6.5) / 2, lineWidth: 6.5, maxValue: maxValue, color: new Color('444444', 0.5) },
     segments,
-    { text: sum.toFixed(1), fontSize: 35, color: Color.white() }
+    { text: sum.toFixed(1), fontSize: 17, color: Color.white() }
   );
 };
 
 // grid feed
-function imageForGridFeed() {
+function imageForGridFeed(size) {
   const sum = V.data.series.grid.feed.valuesSum;
   const segments = [
     { value: sum, color: V.data.series.grid.feed.color },
@@ -316,15 +316,15 @@ function imageForGridFeed() {
   const maxValue = C.data.max.feed;
 
   return imageWithMultiSegmentDonut(
-    { width: 140, height: 140 },
-    { x: 70, y: 70, radius: 63, lineWidth: 13, maxValue, color: new Color('444444', 0.5) },
+    size,
+    { x: size.width / 2, y: size.height / 2, radius: (size.width - 6.5) / 2, lineWidth: 6.5, maxValue: maxValue, color: new Color('444444', 0.5) },
     segments,
-    { text: sum.toFixed(1), fontSize: 35, color: V.data.series.grid.feed.color }
+    { text: sum.toFixed(1), fontSize: 17, color: V.data.series.grid.feed.color }
   );
 }
 
 // production mix --- photovoltaics consumption, battery charge, grid feed
-function imageForProductionMix() {
+function imageForProductionMix(size) {
   const segments = [
     { value: V.data.series.photovoltaics.consume.valuesSum, color: V.data.series.photovoltaics.consume.color },
     { value: V.data.series.battery.charge.valuesSum, color: V.data.series.battery.charge.color },
@@ -334,25 +334,25 @@ function imageForProductionMix() {
   const maxValue = sum;
 
   return imageWithMultiSegmentDonut(
-    { width: 140, height: 140 },
-    { x: 70, y: 70, radius: 63, lineWidth: 13, maxValue, color: new Color('444444', 0.5) },
+    size,
+    { x: size.width / 2, y: size.height / 2, radius: (size.width - 6.5) / 2, lineWidth: 6.5, maxValue: maxValue, color: new Color('444444', 0.5) },
     segments,
-    { text: sum.toFixed(1), fontSize: 35, color: Color.white() }
+    { text: sum.toFixed(1), fontSize: 17, color: Color.white() }
   );
 }
 
 // battery charge level
-function imageForBatteryChargeLevel() {
+function imageForBatteryChargeLevel(size) {
   const level = V.data.series.battery.level.valuesLast;
   const segments = [
     { value: level, color: V.data.series.battery.level.color },
   ];
 
   return imageWithMultiSegmentDonut(
-    { width: 140, height: 140 },
-    { x: 70, y: 70, radius: 63, lineWidth: 13, maxValue: 100.0, color: new Color('444444', 0.5) },
+    size,
+    { x: size.width / 2, y: size.height / 2, radius: (size.width - 6.5) / 2, lineWidth: 6.5, maxValue: 100.0, color: new Color('444444', 0.5) },
     segments,
-    { text: level.toFixed(0) + '%', fontSize: 35, color: V.data.series.battery.level.color }
+    { text: level.toFixed(0) + '%', fontSize: 17, color: V.data.series.battery.level.color }
   );
 }
 
@@ -392,67 +392,89 @@ gradient.colors = C.widget.background.gradient.map((element) => element.color);
 gradient.locations = C.widget.background.gradient.map((element) => element.location);
 widget.backgroundGradient = gradient;
 
+function addWidgetRow(widget, width, images) {
+  const stack = widget.addStack();
+  stack.layoutHorizontally();
+  images = images.filter((element) => element !== null);
+  const space = Math.max(0, width - images.reduce((sum, image) => sum + image.size.width, 0));
+  const count = images.length - (1 - images.length % 2);
+  const spacing = {
+    first: (images.length % 2 ? space / count / 2 : 0),
+    default: space / count,
+  };
+  for (let i = 0; i < images.length; i++) {
+    stack.addSpacer(i === 0 ? spacing.first : spacing.default);
+    stack.addImage(images[i]);
+  }
+}
+
 switch (R.widget.family) {
   default:
   case 'small':
-    switch (R.parameters.style) {
-      default:
-        {
-          let stack;
-          stack = widget.addStack();
-          stack.layoutHorizontally();
-          stack.addImage(imageForConsumptionMix());
-          stack.addSpacer(14);
-          stack.addImage(imageForGridFeed());
+    {
+      const width = (168 - 17 * 2);
+      const imageDonutSize = { width: (width - 14) / 2, height: (width - 14) / 2 };
+      switch (R.parameters.style) {
+        default:
+          addWidgetRow(widget, width,
+            [
+              imageForConsumptionMix(imageDonutSize),
+              imageForGridFeed(imageDonutSize),
+            ]
+          );
           widget.addSpacer(14);
-          stack = widget.addStack();
-          stack.addImage(imageForProductionMix());
-          stack.addSpacer(14);
-          stack.addImage(imageForBatteryChargeLevel());
+          addWidgetRow(widget, width,
+            [
+              imageForProductionMix(imageDonutSize),
+              imageForBatteryChargeLevel(imageDonutSize),
+            ]
+          );
           break;
-        }
+      }
     }
     break;
   case 'medium':
-    switch (R.parameters.style) {
-      default:
-      case 1: {
-        // widget parameter: style=1
-        let stack;
-        stack = widget.addStack();
-        stack.layoutHorizontally();
-        stack.addImage(imageForConsumptionMix());
-        stack.addSpacer(14);
-        stack.addImage(imageForGridFeed());
-        stack.addSpacer(14);
-        stack.addImage(imageForProductionMix());
-        stack.addSpacer(14);
-        stack.addImage(imageForBatteryChargeLevel());
-        stack = widget.addStack();
-        stack.layoutVertically();
-        stack.addImage(imageForProductionConsumptionMixTimeline({ width: 660, height: 140 }));
-        break;
-      }
-      case 2: {
-        // widget parameter: style=2
-        let stack;
-        stack = widget.addStack();
-        stack.layoutHorizontally();
-        stack.addImage(imageForConsumptionMix());
-        stack.addSpacer(14);
-        stack.addImage(imageForGridFeed());
-        stack.addSpacer(14);
-        stack.addImage(imageForProductionMix());
-        stack.addSpacer(14);
-        stack.addImage(imageForBatteryChargeLevel());
-        break;
-      }
-      case 3: {
-        // widget parameter: style=3
-        let stack;
-        stack = widget.addStack();
-        stack.addImage(imageForProductionConsumptionMixTimeline({ width: 660, height: 280 }));
-        break;
+    {
+      const width = (358 - 17 * 2);
+      const height = (168 - 17 * 2);
+      const imageDonutSize = { width: height / 2, height: height / 2 };
+      switch (R.parameters.style) {
+        default:
+        case 1:
+          // widget parameter: style=1
+          addWidgetRow(widget, width,
+            [
+              imageForConsumptionMix(imageDonutSize),
+              imageForGridFeed(imageDonutSize),
+              imageForProductionMix(imageDonutSize),
+              imageForBatteryChargeLevel(imageDonutSize),
+            ]
+          );
+          addWidgetRow(widget, width,
+            [
+              imageForProductionConsumptionMixTimeline({ width: width, height: height / 2 }),
+            ]
+          );
+          break;
+        case 2:
+          // widget parameter: style=2
+          addWidgetRow(widget, width,
+            [
+              imageForConsumptionMix(imageDonutSize),
+              imageForGridFeed(imageDonutSize),
+              imageForProductionMix(imageDonutSize),
+              imageForBatteryChargeLevel(imageDonutSize),
+            ]
+          );
+          break;
+        case 3:
+          // widget parameter: style=3
+          addWidgetRow(widget, width,
+            [
+              imageForProductionConsumptionMixTimeline({ width: width, height: height }),
+            ]
+          );
+          break;
       }
     }
     break;
