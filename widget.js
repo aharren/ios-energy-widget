@@ -346,6 +346,9 @@ function imageForProductionMix(size) {
 
 // battery charge level
 function imageForBatteryChargeLevel(size) {
+  if (!C.data.series.battery.level.query) {
+    return null;
+  }
   const level = V.data.series.battery.level.valuesLast;
   const segments = [
     { value: level, color: V.data.series.battery.level.color },
