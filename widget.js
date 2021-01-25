@@ -304,7 +304,7 @@ function imageForConsumptionMix(size) {
 
   return imageWithMultiSegmentDonut(
     size,
-    { x: size.width / 2, y: size.height / 2, radius: (size.width - 6.5) / 2, lineWidth: 6.5, maxValue: maxValue, color: new Color('444444', 0.5) },
+    { x: size.width / 2, y: size.height / 2, radius: (size.width - 5.5) / 2, lineWidth: 5.5, maxValue: maxValue, color: new Color('444444', 0.5) },
     segments,
     { text: sum.toFixed(1), fontSize: 17, color: Color.white() }
   );
@@ -320,7 +320,7 @@ function imageForGridFeed(size) {
 
   return imageWithMultiSegmentDonut(
     size,
-    { x: size.width / 2, y: size.height / 2, radius: (size.width - 6.5) / 2, lineWidth: 6.5, maxValue: maxValue, color: new Color('444444', 0.5) },
+    { x: size.width / 2, y: size.height / 2, radius: (size.width - 5.5) / 2, lineWidth: 5.5, maxValue: maxValue, color: new Color('444444', 0.5) },
     segments,
     { text: sum.toFixed(1), fontSize: 17, color: V.data.series.grid.feed.color }
   );
@@ -338,7 +338,7 @@ function imageForProductionMix(size) {
 
   return imageWithMultiSegmentDonut(
     size,
-    { x: size.width / 2, y: size.height / 2, radius: (size.width - 6.5) / 2, lineWidth: 6.5, maxValue: maxValue, color: new Color('444444', 0.5) },
+    { x: size.width / 2, y: size.height / 2, radius: (size.width - 5.5) / 2, lineWidth: 5.5, maxValue: maxValue, color: new Color('444444', 0.5) },
     segments,
     { text: sum.toFixed(1), fontSize: 17, color: Color.white() }
   );
@@ -356,7 +356,7 @@ function imageForBatteryChargeLevel(size) {
 
   return imageWithMultiSegmentDonut(
     size,
-    { x: size.width / 2, y: size.height / 2, radius: (size.width - 6.5) / 2, lineWidth: 6.5, maxValue: 100.0, color: new Color('444444', 0.5) },
+    { x: size.width / 2, y: size.height / 2, radius: (size.width - 5.5) / 2, lineWidth: 5.5, maxValue: 100.0, color: new Color('444444', 0.5) },
     segments,
     { text: level.toFixed(0) + '%', fontSize: 17, color: V.data.series.battery.level.color }
   );
@@ -398,14 +398,14 @@ gradient.colors = C.widget.background.gradient.map((element) => element.color);
 gradient.locations = C.widget.background.gradient.map((element) => element.location);
 widget.backgroundGradient = gradient;
 
-function addWidgetRow(widget, width, images) {
+function addWidgetRow(widget, width, margin, images) {
   const stack = widget.addStack();
   stack.layoutHorizontally();
   images = images.filter((element) => element !== null);
-  const space = Math.max(0, width - images.reduce((sum, image) => sum + image.size.width, 0));
+  const space = Math.max(0, width - margin * 2 - images.reduce((sum, image) => sum + image.size.width, 0));
   const count = images.length - (1 - images.length % 2);
   const spacing = {
-    first: (images.length % 2 ? space / count / 2 : 0),
+    first: margin + (images.length % 2 ? space / count / 2 : 0),
     default: space / count,
   };
   for (let i = 0; i < images.length; i++) {
@@ -418,18 +418,19 @@ switch (R.widget.family) {
   default:
   case 'small':
     {
-      const width = (168 - 17 * 2);
-      const imageDonutSize = { width: (width - 14) / 2, height: (width - 14) / 2 };
+      const width = (155 - 16 * 2);
+      const spacerSize = 14;
+      const imageDonutSize = { width: (width - spacerSize) / 2, height: (width - spacerSize) / 2 };
       switch (R.parameters.style) {
         default:
-          addWidgetRow(widget, width,
+          addWidgetRow(widget, width, 0,
             [
               imageForConsumptionMix(imageDonutSize),
               imageForGridFeed(imageDonutSize),
             ]
           );
-          widget.addSpacer(14);
-          addWidgetRow(widget, width,
+          widget.addSpacer(spacerSize);
+          addWidgetRow(widget, width, 0,
             [
               imageForProductionMix(imageDonutSize),
               imageForBatteryChargeLevel(imageDonutSize),
@@ -441,14 +442,15 @@ switch (R.widget.family) {
     break;
   case 'medium':
     {
-      const width = (358 - 17 * 2);
-      const height = (168 - 17 * 2);
-      const imageDonutSize = { width: height / 2, height: height / 2 };
+      const width = (329 - 16 * 2);
+      const height = (155 - 16 * 2);
+      const spacerSize = 14;
+      const imageDonutSize = { width: (height - spacerSize) / 2, height: (height - spacerSize) / 2 };
       switch (R.parameters.style) {
         default:
         case 1:
           // widget parameter: style=1
-          addWidgetRow(widget, width,
+          addWidgetRow(widget, width, 7,
             [
               imageForConsumptionMix(imageDonutSize),
               imageForGridFeed(imageDonutSize),
@@ -456,15 +458,16 @@ switch (R.widget.family) {
               imageForBatteryChargeLevel(imageDonutSize),
             ]
           );
-          addWidgetRow(widget, width,
+          widget.addSpacer(spacerSize);
+          addWidgetRow(widget, width, 0,
             [
-              imageForProductionConsumptionMixTimeline({ width: width, height: height / 2 }),
+              imageForProductionConsumptionMixTimeline({ width: width, height: (height - spacerSize) / 2 }),
             ]
           );
           break;
         case 2:
           // widget parameter: style=2
-          addWidgetRow(widget, width,
+          addWidgetRow(widget, width, 7,
             [
               imageForConsumptionMix(imageDonutSize),
               imageForGridFeed(imageDonutSize),
@@ -475,7 +478,7 @@ switch (R.widget.family) {
           break;
         case 3:
           // widget parameter: style=3
-          addWidgetRow(widget, width,
+          addWidgetRow(widget, width, 0,
             [
               imageForProductionConsumptionMixTimeline({ width: width, height: height }),
             ]
