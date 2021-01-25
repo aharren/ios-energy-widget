@@ -38,7 +38,11 @@ const server = http.createServer(async (request, response) => {
       case '/widget': {
         // at /widget, we render the widget and return its image and console output
         const script = fs.readFileSync(widget);
-        const output = await simulate(script);
+        const settings = {
+          widgetParameter: '',
+          widgetFamily: '',
+        }
+        const output = await simulate(script, settings);
         response.writeHead(200, { 'Content-Type': 'application/json' });
         response.end(JSON.stringify(output, null, 2));
         break;

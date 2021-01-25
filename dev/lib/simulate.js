@@ -1,6 +1,6 @@
 // simulation of a Scriptable.app environnment -- what was required so far; not pixel-perfect ;)
 
-async function simulate(_script) {
+async function simulate(_script, _settings) {
 
   // internals
   const _ = {
@@ -27,12 +27,13 @@ async function simulate(_script) {
 
   // args
   const args = {
-    widgetParameter: '',
+    widgetParameter: _settings.widgetParameter || '',
   }
 
   // config
   const config = {
     runsInWidget: false,
+    widgetFamily: _settings.widgetFamily || '',
   }
 
   // console
