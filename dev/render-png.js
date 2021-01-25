@@ -32,7 +32,7 @@ async function main() {
   const image = new cv.Image();
   image.src = 'data:image/png;base64,' + output.image.data;
   context.drawImage(image, 0, 0, output.image.width * scale, output.image.height * scale);
-  const buffer = canvas.toBuffer('image/png', { compressionLevel: 0, filters: cv.PNG_FILTER_NONE });
+  const buffer = canvas.toBuffer('image/png', { compressionLevel: 0, filters: cv.PNG_FILTER_NONE, resolution: output.image.ppi * scale });
   process.stdout.write(buffer);
 }
 

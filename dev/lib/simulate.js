@@ -407,7 +407,7 @@ async function simulate(_script, _settings) {
         y += height;
       }
 
-      const buffer = canvas.toBuffer('image/png', { compressionLevel: 0, filters: _.lib.canvas.PNG_FILTER_NONE });
+      const buffer = canvas.toBuffer('image/png', { compressionLevel: 0, filters: _.lib.canvas.PNG_FILTER_NONE, resolution: 72 * _.scale });
       return buffer;
     }
   }
@@ -438,6 +438,7 @@ async function simulate(_script, _settings) {
       _.output.image.width = size.width;
       _.output.image.height = size.height;
       _.output.image.scale = _.scale;
+      _.output.image.ppi = 72 * _.scale;
     }
   }
 
