@@ -300,7 +300,7 @@ async function simulate(_script, _settings) {
       this._objects = [];
       this._family = 'small';
       this._borderRadius = 17;
-      this._padding = { top: 17, left: 17 };
+      this._margin = { top: 16, left: 16 };
     }
 
     addStack() {
@@ -314,11 +314,11 @@ async function simulate(_script, _settings) {
 
     presentSmall() {
       this._family = 'small';
-      this._borderRadius = 17;
+      this._borderRadius = 22;
     }
     presentMedium() {
       this._family = 'medium';
-      this._borderRadius = 20;
+      this._borderRadius = 22;
     }
 
     set backgroundGradient(gradient) {
@@ -330,9 +330,9 @@ async function simulate(_script, _settings) {
       switch (this._family) {
         default:
         case 'small':
-          return new Size(168 * _.scale, 168 * _.scale);
+          return new Size(155 * _.scale, 155 * _.scale);
         case 'medium':
-          return new Size(358 * _.scale, 168 * _.scale);
+          return new Size(329 * _.scale, 155 * _.scale);
       }
     }
     _renderAsImage() {
@@ -368,8 +368,8 @@ async function simulate(_script, _settings) {
       }
 
       const spacing = { x: 0, y: 0 };
-      let x = this._padding.left;
-      let y = this._padding.top;
+      let x = this._margin.left;
+      let y = this._margin.top;
       for (let i = 0; i < this._objects.length; i++) {
         const row = this._objects[i];
         let height = 0;
@@ -403,7 +403,7 @@ async function simulate(_script, _settings) {
             }
         }
 
-        x = this._padding.left;
+        x = this._margin.left;
         y += height;
       }
 
