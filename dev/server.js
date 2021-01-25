@@ -7,6 +7,7 @@
 const http = require("http");
 const fs = require("fs");
 const child_process = require('child_process');
+const simulate = require('./lib/simulate.js');
 
 if (process.argv.length < 3) {
   console.log('usage: node server.js <filename-of-widget>');
@@ -36,7 +37,6 @@ const server = http.createServer(async (request, response) => {
       }
       case '/widget': {
         // at /widget, we render the widget and return its image and console output
-        const simulate = eval('async () => { ' + fs.readFileSync(__dirname + '/lib/simulate.js') + '}');
         const script = fs.readFileSync(widget);
         const output = await simulate(script);
         response.writeHead(200, { 'Content-Type': 'application/json' });
