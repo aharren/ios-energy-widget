@@ -306,7 +306,7 @@ function imageForConsumptionMix(size) {
     size,
     { x: size.width / 2, y: size.height / 2, radius: (size.width - 5.5) / 2, lineWidth: 5.5, maxValue: maxValue, color: new Color('444444', 0.5) },
     segments,
-    { text: sum.toFixed(1), fontSize: 17, color: Color.white() }
+    { text: sum.toFixed(1), fontSize: 14, color: Color.white() }
   );
 };
 
@@ -322,7 +322,7 @@ function imageForGridFeed(size) {
     size,
     { x: size.width / 2, y: size.height / 2, radius: (size.width - 5.5) / 2, lineWidth: 5.5, maxValue: maxValue, color: new Color('444444', 0.5) },
     segments,
-    { text: sum.toFixed(1), fontSize: 17, color: V.data.series.grid.feed.color }
+    { text: sum.toFixed(1), fontSize: 14, color: V.data.series.grid.feed.color }
   );
 }
 
@@ -340,7 +340,7 @@ function imageForProductionMix(size) {
     size,
     { x: size.width / 2, y: size.height / 2, radius: (size.width - 5.5) / 2, lineWidth: 5.5, maxValue: maxValue, color: new Color('444444', 0.5) },
     segments,
-    { text: sum.toFixed(1), fontSize: 17, color: Color.white() }
+    { text: sum.toFixed(1), fontSize: 14, color: Color.white() }
   );
 }
 
@@ -358,7 +358,7 @@ function imageForBatteryChargeLevel(size) {
     size,
     { x: size.width / 2, y: size.height / 2, radius: (size.width - 5.5) / 2, lineWidth: 5.5, maxValue: 100.0, color: new Color('444444', 0.5) },
     segments,
-    { text: level.toFixed(0) + '%', fontSize: 17, color: V.data.series.battery.level.color }
+    { text: level.toFixed(0) + '%', fontSize: 14, color: V.data.series.battery.level.color }
   );
 }
 
