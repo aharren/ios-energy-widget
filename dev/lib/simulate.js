@@ -87,30 +87,33 @@ async function simulate(_script, _settings) {
     }
 
     static red() {
-      return new Color('ff0000');
+      return new Color(Color._hex(255, 59, 48));
     }
     static green() {
-      return new Color('00ff00');
+      return new Color(Color._hex(52, 199, 89));
     }
     static blue() {
-      return new Color('0000ff');
+      return new Color(Color._hex(0, 122, 255));
     }
     static yellow() {
-      return new Color('ffff00');
+      return new Color(Color._hex(255, 204, 0));
     }
     static orange() {
-      return new Color('ffa500');
+      return new Color(Color._hex(255, 149, 0));
     }
     static white() {
-      return new Color('ffffff');
+      return new Color(Color._hex(255, 255, 255));
     }
     static black() {
-      return new Color('000000');
+      return new Color(Color._hex(0, 0, 0));
     }
 
     // internals
     _rgba() {
       return `rgba(${this._red},${this._green},${this._blue},${this._alpha})`;
+    }
+    static _hex(r, g, b) {
+      return r.toString(16).padStart(2, '0') + g.toString(16).padStart(2, '0') + b.toString(16).padStart(2, '0');
     }
   }
 
