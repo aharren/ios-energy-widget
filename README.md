@@ -39,4 +39,10 @@ Visualized data:
  - Timeline:
    - Stacked values in 15-minutes intervals
 
-Widget parameters are passed as key1=value1;key2=value2;...
+Widget parameters:
+
+* `style`: visual style of the widget; valid values: `1`, `2`, `3`
+* `time-range`: time range to display; valid values: `last-24h`, `today`
+
+Widget parameters are passed as `key1=value1;key2=value2;...`.
+
