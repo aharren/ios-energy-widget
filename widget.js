@@ -1,11 +1,12 @@
 'use strict';
 
 //
-// configuration
+// static configuration
 //
 
 const C = {
   widget: {
+    // configuration for the in-app preview
     preview: {
       parameters: {
         style: 1,
@@ -14,6 +15,7 @@ const C = {
         family: 'medium',
       },
     },
+    // settings for the widget background and gradient colors
     background: {
       gradient: [
         { location: 0, color: new Color('#181818') },
@@ -22,25 +24,28 @@ const C = {
     },
   },
   data: {
+    // connection details for the Grafana server; protocol, host, port, API key
     server: {
       url: 'https://grafana.local:3000',
       apikey: 'APIKEY',
     },
+    // name of the Grafana database
     database: 'measurements',
+    // device-measurement time series
     series: {
       photovoltaics: {
         consume: {
-          query: 'SELECT difference(last("value")) / 1000 FROM "photovoltaics-energy-counter-consumption" WHERE ${time-range} GROUP BY ${time-interval} fill(0)', // kWh
+          query: 'SELECT difference(last("value")) / 1000 FROM "photovoltaics-energy-counter-consumption" WHERE ${time-range} GROUP BY ${time-interval} fill(null)', // kWh
           color: Color.yellow(),
         },
       },
       battery: {
         charge: {
-          query: 'SELECT difference(last("value")) / 1000 FROM "battery-energy-counter-charge" WHERE ${time-range} GROUP BY ${time-interval} fill(0)', // kWh
-          color: new Color('#00aaee'),
+          query: 'SELECT difference(last("value")) / 1000 FROM "battery-energy-counter-charge" WHERE ${time-range} GROUP BY ${time-interval} fill(null)', // kWh
+          color: Color.blue(),
         },
         consume: {
-          query: 'SELECT difference(last("value")) / 1000 FROM "battery-energy-counter-discharge" WHERE ${time-range} GROUP BY ${time-interval} fill(0)', // kWh
+          query: 'SELECT difference(last("value")) / 1000 FROM "battery-energy-counter-discharge" WHERE ${time-range} GROUP BY ${time-interval} fill(null)', // kWh
           color: Color.orange(),
         },
         level: {
@@ -50,15 +55,16 @@ const C = {
       },
       grid: {
         feed: {
-          query: 'SELECT difference(last("value")) / 1000 FROM "grid-energy-counter-out" WHERE ${time-range} GROUP BY ${time-interval} fill(0)', // kWh
+          query: 'SELECT difference(last("value")) / 1000 FROM "grid-energy-counter-out" WHERE ${time-range} GROUP BY ${time-interval} fill(null)', // kWh
           color: Color.green(),
         },
         consume: {
-          query: 'SELECT difference(last("value")) / 1000 FROM "grid-energy-counter-in" WHERE ${time-range} GROUP BY ${time-interval} fill(0)', // kWh
+          query: 'SELECT difference(last("value")) / 1000 FROM "grid-energy-counter-in" WHERE ${time-range} GROUP BY ${time-interval} fill(null)', // kWh
           color: Color.red(),
         },
       },
     },
+    // max values to use when rendering the graphics
     max: {
       consumption: 15, // kWh
       feed: 25, // kWh
@@ -68,7 +74,7 @@ const C = {
 };
 
 //
-// runtime
+// runtime configuration
 //
 
 const R = {
@@ -99,96 +105,180 @@ const R = {
 // query handling
 //
 
+// retrieve the values for the given device-measurement time series configuration
 async function getSeriesValues(series) {
 
+  // send a query request to the server and return the query results as an array of objects with timestamps as keys
   async function executeQueries(queries) {
+    // queries = [
+    //   'query 1',
+    //   'query 2',
+    //   ...
+    // ]
+
     function escapeURLSegment(segment) {
       return segment.replace(/[^0-9A-Za-z]/g, (c) => '%' + c.charCodeAt(0).toString(16).padStart(2, '0'));
     }
 
+    // join the queries into a single ;-separated string and replace the time placeholders
     const q = queries.join(';')
       .replace(/\$\{time\-range\}/gi, ` (time >= ${R.time.timestampNowMinus24h - R.time.delta15min * 2}ms AND time <= ${R.time.timestampNow}ms) `)
       .replace(/\$\{time\-interval\}/gi, ` time(15m) `)
       ;
     const url = `${C.data.server.url}/api/datasources/proxy/1/query?db=${escapeURLSegment(C.data.database)}&epoch=ms&q=${escapeURLSegment(q)}`;
 
+    // send the request with the queries to the server
     const request = new Request(url);
     request.headers = {
       'Accept': 'application/json',
       'Authorization': `Bearer ${C.data.server.apikey}`,
     }
+
+    // retrieve the response
     const response = await request.loadJSON();
     if (!response.results) {
       console.error('request failed: ' + JSON.stringify(response, null, 2));
     }
-    return response.results;
+
+    // transform the response into an array of objects with timestamp-to-value properties
+    const results = response.results.map(
+      element => element.series[0].values.reduce((obj, element) => { obj[element[0]] = element[1]; return obj; }, {})
+    );
+    // results = [
+    //   // data for query 1 in 15-min intervals:
+    //   { ms-timestamp: value, ms-timestamp: value, ... },
+    //   // data for query 2 in 15-min intervals:
+    //   { ms-timestamp: value, ms-timestamp: value, ... },
+    //   ...
+    // ]
+    return results;
   }
 
-  function createSeriesQueries(series) {
+  // collect the queries from the given time series configuration and return them as an array
+  function createSeriesQueryArray(series) {
+    // series = {
+    //   device-a: {
+    //     measurement-1: {
+    //       query: 'query 1',
+    //     },
+    //     measurement-2: {
+    //       query: 'query 2',
+    //     },
+    //   },
+    //   device-b: {
+    //     measurement-3: {
+    //       query: 'query 3',
+    //     },
+    //   },
+    //   ...
+    // }
     const queries = [];
-    for (const k in series) {
-      if (series.hasOwnProperty(k)) {
-        for (const sk in series[k]) {
-          if (series[k].hasOwnProperty(sk)) {
-            if (series[k][sk].query) {
-              queries.push(series[k][sk].query);
+    for (const device in series) {
+      if (series.hasOwnProperty(device)) {
+        for (const measurement in series[device]) {
+          if (series[device].hasOwnProperty(measurement)) {
+            if (series[device][measurement].query) {
+              queries.push(series[device][measurement].query);
             }
           }
         }
       }
     }
     return queries;
+    // queries = [
+    //   'query 1',
+    //   'query 2',
+    //   'query 3',
+    //   ...
+    // }
   }
 
-  function transformResults(series, results) {
-    function transformResultArray(results) {
+  // transform the given array of objects with timestamp-to-value properties to index-based arrays with 96 values,
+  // apply timestamp-based filters, and use the same structure as the given device-measurement time series configuration
+  function transformAndFilterResults(series, results) {
+
+    // transform a single object with timestamp-to-value properties
+    function transformAndFilterResultObject(results) {
+      // results = {
+      //   ms-timestamp: value,
+      //   ms-timestamp: value,
+      //   ...
+      // }
       const timestampStart = R.time.timestampNowMinus24h;
       const timestampEnd = R.time.timestampNow;
-      const r = results.reduce((obj, element) => { obj[element[0]] = element[1]; return obj; }, {});
-      const a = {
+      const ra = {
         all: new Array(96).fill(0),
         today: new Array(96).fill(0),
         yesterday: new Array(96).fill(0),
       };
       for (let i = 0, timestamp = R.time.timestampNowMinus24h; i < 96; i++, timestamp += R.time.delta15min) {
-        const value = r[timestamp] > 0 ? r[timestamp] : 0;
+        const value = results[timestamp] > 0 ? results[timestamp] : 0;
         if (timestamp >= timestampStart) {
-          a.all[i] = value;
+          ra.all[i] = value;
           if (timestamp < R.time.timestampToday0h) {
-            a.yesterday[i] = value;
+            ra.yesterday[i] = value;
           } else if (timestamp < timestampEnd) {
-            a.today[i] = value;
+            ra.today[i] = value;
           }
         }
       }
-      return a;
+      return ra;
+      // ra = {
+      //   all: [ a, b, c, ..., zz ],
+      //   today: [ 0, 0, c, ..., zz ],
+      //   yesterday: [ a, b, 0, ..., 0 ],
+      // }
     }
 
     const values = {};
     let i = 0;
-    for (const k in series) {
-      if (series.hasOwnProperty(k)) {
-        values[k] = {};
-        for (const sk in series[k]) {
-          if (series[k].hasOwnProperty(sk)) {
-            const ra = series[k][sk].query ? results[i++].series[0].values : [];
-            const r = transformResultArray(ra);
-            values[k][sk] = {
-              values: r,
-              color: series[k][sk].color,
-              valuesLast: r.all[r.all.length - 1],
-              valuesSum: r.all.reduce((sum, element) => { return sum + element }, 0.0),
+    for (const device in series) {
+      if (series.hasOwnProperty(device)) {
+        values[device] = {};
+        for (const measurement in series[device]) {
+          if (series[device].hasOwnProperty(measurement)) {
+            const ro = series[device][measurement].query ? results[i++] : {};
+            const ra = transformAndFilterResultObject(ro);
+            values[device][measurement] = {
+              values: ra,
+              color: series[device][measurement].color,
+              valuesLast: ra.all[ra.all.length - 1],
+              valuesSum: ra.all.reduce((sum, element) => { return sum + element }, 0.0),
             };
           }
         }
       }
     }
     return values;
+    // values = {
+    //   device-a: {
+    //     measurement-1: {
+    //       values: {
+    //          all: [ a, b, c, ..., zz ],
+    //          today: [ 0, 0, c, ..., zz ],
+    //          yesterday: [ a, b, 0, ..., 0 ],
+    //       },
+    //       color: ...,
+    //       valuesLast: zz,
+    //       valuesSum: zzzz,
+    //     },
+    //     measurement-2: {
+    //       ...,
+    //     },
+    //     ...
+    //   },
+    //   device-b: {
+    //     measurement-3: {
+    //       ...,
+    //     },
+    //   },
+    //   ...
+    // }
   }
 
-  const queries = createSeriesQueries(series);
+  const queries = createSeriesQueryArray(series);
   const results = await executeQueries(queries);
-  const values = transformResults(series, results);
+  const values = transformAndFilterResults(series, results);
   return values;
 }
 
@@ -196,7 +286,10 @@ async function getSeriesValues(series) {
 // drawing functions
 //
 
+// draw a multi-segment donut
 function drawMultiSegmentDonut(dc, circle, segments, text) {
+
+  // helper function to draw a single segment of the donut
   function drawDonutSegment(dc, centerX, centerY, radius, lineWidth, maxValue, startValue, endValue, color) {
     dc.setStrokeColor(color);
     dc.setFillColor(color);
@@ -215,10 +308,12 @@ function drawMultiSegmentDonut(dc, circle, segments, text) {
     }
   }
 
+  // draw a background circle
   if (circle.color) {
     drawDonutSegment(dc, circle.x, circle.y, circle.radius, circle.lineWidth, circle.maxValue, 0, circle.maxValue, circle.color);
   }
 
+  // draw the segments
   for (let i = 0, baseValue = 0; i < segments.length; i++) {
     const value = segments[i].value;
     const color = segments[i].color;
@@ -232,6 +327,7 @@ function drawMultiSegmentDonut(dc, circle, segments, text) {
     baseValue += value;
   }
 
+  // draw the given text in the middle of the donut
   if (text) {
     dc.setTextAlignedCenter();
     dc.setFont(Font.systemFont(text.fontSize));
@@ -241,6 +337,7 @@ function drawMultiSegmentDonut(dc, circle, segments, text) {
   }
 }
 
+// render a multi-segment donut as an image
 function imageWithMultiSegmentDonut(size, circle, segments, text) {
   const dc = new DrawContext();
   dc.size = new Size(size.width, size.height);
@@ -251,9 +348,12 @@ function imageWithMultiSegmentDonut(size, circle, segments, text) {
   return dc.getImage();
 }
 
+// draw a multi-segment chart with stacked values
 function drawMultiSegmentChart(dc, rect, segments, maxSum, index0) {
   const w = rect.width / segments[0].values.length;
   const lr = w / 4;
+
+  // for each x position, stack the values
   for (let i = 0, x = rect.x; i < segments[0].values.length; i++) {
     const ri = (i + index0) % segments[0].values.length;
     let baseValue = rect.height;
@@ -267,6 +367,7 @@ function drawMultiSegmentChart(dc, rect, segments, maxSum, index0) {
   }
 }
 
+// render a multi-segment chart with stacked values as an image
 function imageWithMultiSegmentChart(size, rect, segments, maxSum, index0) {
   const dc = new DrawContext();
   dc.size = new Size(size.width, size.height);
@@ -393,11 +494,13 @@ function imageForProductionConsumptionMixTimeline(size) {
 
 const widget = new ListWidget();
 
+// add the background gradient
 const gradient = new LinearGradient()
 gradient.colors = C.widget.background.gradient.map((element) => element.color);
 gradient.locations = C.widget.background.gradient.map((element) => element.location);
 widget.backgroundGradient = gradient;
 
+// helper function to layout a single row of the widget
 function addWidgetRow(widget, width, margin, images) {
   const stack = widget.addStack();
   stack.layoutHorizontally();
@@ -414,6 +517,7 @@ function addWidgetRow(widget, width, margin, images) {
   }
 }
 
+// layout the widget based on the current widget family and the given style parameter
 switch (R.widget.family) {
   default:
   case 'small':
