@@ -10,6 +10,7 @@ const C = {
     preview: {
       parameters: {
         style: 1,
+        timeRange: 'last-24h',
       },
       widget: {
         family: 'medium',
@@ -84,6 +85,8 @@ const R = {
     return {
       // style=<number> --- visual style of the widget
       style: parseInt(p.style) || C.widget.preview.parameters.style,
+      // time-range=last-24h or today --- time range to display
+      timeRange: p['time-range'] || C.widget.preview.parameters.timeRange,
     }
   })(),
   widget: {
@@ -204,7 +207,15 @@ async function getSeriesValues(series) {
       //   ms-timestamp: value,
       //   ...
       // }
-      const timestampStart = R.time.timestampNowMinus24h;
+      const timestampStart = (() => {
+        switch (R.parameters.timeRange) {
+          default:
+          case 'last-24h':
+            return R.time.timestampNowMinus24h;
+          case 'today':
+            return R.time.timestampToday0h;
+        }
+      })();
       const timestampEnd = R.time.timestampNow;
       const ra = {
         all: new Array(96).fill(0),
