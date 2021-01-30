@@ -467,6 +467,7 @@ switch (R.widget.family) {
           break;
         case 2:
           // widget parameter: style=2
+          widget.addSpacer(height / 2 / 2);
           addWidgetRow(widget, width, 7,
             [
               imageForConsumptionMix(imageDonutSize),
@@ -475,6 +476,7 @@ switch (R.widget.family) {
               imageForBatteryChargeLevel(imageDonutSize),
             ]
           );
+          widget.addSpacer(height / 2 / 2);
           break;
         case 3:
           // widget parameter: style=3
