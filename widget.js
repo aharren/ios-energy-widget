@@ -410,9 +410,8 @@ function imageForConsumptionMix(size) {
     { value: V.data.series.battery.consume.valuesSum, color: V.data.series.battery.consume.color },
     { value: V.data.series.grid.consume.valuesSum, color: V.data.series.grid.consume.color }
   ];
-
   const sum = segments.reduce((sum, segment) => { return sum + segment.value }, 0.0);
-  const maxValue = C.data.max.consumption;
+  const maxValue = Math.max(C.data.max.consumption, sum);
 
   return imageWithMultiSegmentDonut(
     size,
@@ -424,11 +423,11 @@ function imageForConsumptionMix(size) {
 
 // grid feed
 function imageForGridFeed(size) {
-  const sum = V.data.series.grid.feed.valuesSum;
   const segments = [
-    { value: sum, color: V.data.series.grid.feed.color },
+    { value: V.data.series.grid.feed.valuesSum, color: V.data.series.grid.feed.color },
   ];
-  const maxValue = C.data.max.feed;
+  const sum = segments.reduce((sum, segment) => { return sum + segment.value }, 0.0);
+  const maxValue = Math.max(C.data.max.feed, sum);
 
   return imageWithMultiSegmentDonut(
     size,
