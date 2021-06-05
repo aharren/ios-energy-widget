@@ -16,17 +16,25 @@ Styles - selected via widget parameter:
 
 - Medium:
 
-  - style=1
+  - `style=1;time-range=last-24h`
 
     ![](readme-assets/example-medium-1.png)
 
-  - style=2
+  - `style=1;time-range=today`
+
+    ![](readme-assets/example-medium-1t.png)
+
+  - `style=2;time-range=last-24h`
 
     ![](readme-assets/example-medium-2.png)
 
-  - style=3
+  - `style=3;time-range=last-24h`
 
     ![](readme-assets/example-medium-3.png)
+
+  - `style=3;time-range=today`
+
+    ![](readme-assets/example-medium-3t.png)
 
 Visualized data:
 

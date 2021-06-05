@@ -70,7 +70,13 @@ const C = {
       consumption: 15, // kWh
       feed: 25, // kWh
       sumPerSegment: 1, // kWh
-    }
+    },
+    // colors
+    colors: {
+      photovoltaics: {
+        production: new Color('#aaaaaa', 0.5),
+      },
+    },
   },
 };
 
@@ -226,11 +232,11 @@ async function getSeriesValues(series) {
         const value = results[timestamp] > 0 ? results[timestamp] : 0;
         if (timestamp >= timestampStart) {
           ra.all[i] = value;
-          if (timestamp < R.time.timestampToday0h) {
-            ra.yesterday[i] = value;
-          } else if (timestamp < timestampEnd) {
-            ra.today[i] = value;
-          }
+        }
+        if (timestamp < R.time.timestampToday0h) {
+          ra.yesterday[i] = value;
+        } else if (timestamp < timestampEnd) {
+          ra.today[i] = value;
         }
       }
       return ra;
@@ -475,23 +481,40 @@ function imageForBatteryChargeLevel(size) {
 
 // timeline --- consumption, grid feed, battery charge
 function imageForProductionConsumptionMixTimeline(size) {
+  const segments = [
+    // today
+    { values: V.data.series.grid.feed.values.today, color: V.data.series.grid.feed.color },
+    { values: V.data.series.battery.charge.values.today, color: V.data.series.battery.charge.color },
+    { values: V.data.series.grid.consume.values.today, color: V.data.series.grid.consume.color },
+    { values: V.data.series.battery.consume.values.today, color: V.data.series.battery.consume.color },
+    { values: V.data.series.photovoltaics.consume.values.today, color: V.data.series.photovoltaics.consume.color },
+  ].concat(
+    (() => {
+      switch (R.parameters.timeRange) {
+        default:
+        case 'last-24h':
+          return [
+            // yesterday
+            { values: V.data.series.grid.feed.values.yesterday, color: new Color(V.data.series.grid.feed.color.hex, 0.5) },
+            { values: V.data.series.battery.charge.values.yesterday, color: new Color(V.data.series.battery.charge.color.hex, 0.5) },
+            { values: V.data.series.grid.consume.values.yesterday, color: new Color(V.data.series.grid.consume.color.hex, 0.5) },
+            { values: V.data.series.battery.consume.values.yesterday, color: new Color(V.data.series.battery.consume.color.hex, 0.5) },
+            { values: V.data.series.photovoltaics.consume.values.yesterday, color: new Color(V.data.series.photovoltaics.consume.color.hex, 0.5) }
+          ];
+        case 'today':
+          return [
+            // yesterday
+            { values: V.data.series.grid.feed.values.yesterday, color: C.data.colors.photovoltaics.production },
+            { values: V.data.series.battery.charge.values.yesterday, color: C.data.colors.photovoltaics.production },
+            { values: V.data.series.photovoltaics.consume.values.yesterday, color: C.data.colors.photovoltaics.production }
+          ];
+      }
+    })());
+
   return imageWithMultiSegmentChart(
     size,
     { x: 0, y: 0, width: size.width, height: size.height },
-    [
-      // today
-      { values: V.data.series.grid.feed.values.today, color: V.data.series.grid.feed.color },
-      { values: V.data.series.battery.charge.values.today, color: V.data.series.battery.charge.color },
-      { values: V.data.series.grid.consume.values.today, color: V.data.series.grid.consume.color },
-      { values: V.data.series.battery.consume.values.today, color: V.data.series.battery.consume.color },
-      { values: V.data.series.photovoltaics.consume.values.today, color: V.data.series.photovoltaics.consume.color },
-      // yesterday
-      { values: V.data.series.grid.feed.values.yesterday, color: new Color(V.data.series.grid.feed.color.hex, 0.5) },
-      { values: V.data.series.battery.charge.values.yesterday, color: new Color(V.data.series.battery.charge.color.hex, 0.5) },
-      { values: V.data.series.grid.consume.values.yesterday, color: new Color(V.data.series.grid.consume.color.hex, 0.5) },
-      { values: V.data.series.battery.consume.values.yesterday, color: new Color(V.data.series.battery.consume.color.hex, 0.5) },
-      { values: V.data.series.photovoltaics.consume.values.yesterday, color: new Color(V.data.series.photovoltaics.consume.color.hex, 0.5) },
-    ],
+    segments,
     C.data.max.sumPerSegment,
     // let the timeline start at 0:00 today
     (R.time.timestampToday0h - R.time.timestampNowMinus24h) / R.time.delta15min
