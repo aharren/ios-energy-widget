@@ -149,11 +149,18 @@ async function getSeriesValues(series) {
     const response = await request.loadJSON();
     if (!response.results) {
       console.error('request failed: ' + JSON.stringify(response, null, 2));
+      response.results = {};
     }
 
     // transform the response into an array of objects with timestamp-to-value properties
     const results = response.results.map(
-      element => element.series[0].values.reduce((obj, element) => { obj[element[0]] = element[1]; return obj; }, {})
+      element => {
+        if (!element.series) {
+          console.error('no result for statement ' + JSON.stringify(element));
+          return {};
+        }
+        return element.series[0].values.reduce((obj, element) => { obj[element[0]] = element[1]; return obj; }, {});
+      }
     );
     // results = [
     //   // data for query 1 in 15-min intervals:
