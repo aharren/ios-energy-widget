@@ -30,7 +30,9 @@ const C = {
       url: 'https://grafana.local:3000',
       apikey: 'APIKEY',
     },
-    // name of the Grafana database
+    // id of the Grafana data source; check https://grafana.local:3000/api/datasources
+    dataSourceId: 1,
+    // name of the backend database
     database: 'measurements',
     // device-measurement time series
     series: {
@@ -134,7 +136,7 @@ async function getSeriesValues(series) {
       .replace(/\$\{time\-range\}/gi, ` (time >= ${R.time.timestampNowMinus24h - R.time.delta15min * 2}ms AND time <= ${R.time.timestampNow}ms) `)
       .replace(/\$\{time\-interval\}/gi, ` time(15m) `)
       ;
-    const url = `${C.data.server.url}/api/datasources/proxy/1/query?db=${escapeURLSegment(C.data.database)}&epoch=ms&q=${escapeURLSegment(q)}`;
+    const url = `${C.data.server.url}/api/datasources/proxy/${C.data.dataSourceId}/query?db=${escapeURLSegment(C.data.database)}&epoch=ms&q=${escapeURLSegment(q)}`;
 
     // send the request with the queries to the server
     const request = new Request(url);
