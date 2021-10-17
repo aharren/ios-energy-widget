@@ -149,7 +149,7 @@ async function getSeriesValues(series) {
     const response = await request.loadJSON();
     if (!response.results) {
       console.error('request failed: ' + JSON.stringify(response, null, 2));
-      response.results = {};
+      response.results = queries.map(() => { return {} });
     }
 
     // transform the response into an array of objects with timestamp-to-value properties
@@ -302,10 +302,15 @@ async function getSeriesValues(series) {
     // }
   }
 
-  const queries = createSeriesQueryArray(series);
-  const results = await executeQueries(queries);
-  const values = transformAndFilterResults(series, results);
-  return values;
+  try {
+    const queries = createSeriesQueryArray(series);
+    const results = await executeQueries(queries);
+    const values = transformAndFilterResults(series, results);
+    return values;
+  } catch (err) {
+    console.error('query processing failed: ' + err);
+    return undefined;
+  }
 }
 
 //
@@ -560,81 +565,83 @@ function addWidgetRow(widget, width, margin, images) {
 }
 
 // layout the widget based on the current widget family and the given style parameter
-switch (R.widget.family) {
-  default:
-  case 'small':
-    {
-      const width = (155 - 16 * 2);
-      const spacerSize = 14;
-      const imageDonutSize = { width: (width - spacerSize) / 2, height: (width - spacerSize) / 2 };
-      switch (R.parameters.style) {
-        default:
-          addWidgetRow(widget, width, 0,
-            [
-              imageForConsumptionMix(imageDonutSize),
-              imageForGridFeed(imageDonutSize),
-            ]
-          );
-          widget.addSpacer(spacerSize);
-          addWidgetRow(widget, width, 0,
-            [
-              imageForProductionMix(imageDonutSize),
-              imageForBatteryChargeLevel(imageDonutSize),
-            ]
-          );
-          break;
+if (V.data.series) {
+  switch (R.widget.family) {
+    default:
+    case 'small':
+      {
+        const width = (155 - 16 * 2);
+        const spacerSize = 14;
+        const imageDonutSize = { width: (width - spacerSize) / 2, height: (width - spacerSize) / 2 };
+        switch (R.parameters.style) {
+          default:
+            addWidgetRow(widget, width, 0,
+              [
+                imageForConsumptionMix(imageDonutSize),
+                imageForGridFeed(imageDonutSize),
+              ]
+            );
+            widget.addSpacer(spacerSize);
+            addWidgetRow(widget, width, 0,
+              [
+                imageForProductionMix(imageDonutSize),
+                imageForBatteryChargeLevel(imageDonutSize),
+              ]
+            );
+            break;
+        }
       }
-    }
-    break;
-  case 'medium':
-    {
-      const width = (329 - 16 * 2);
-      const height = (155 - 16 * 2);
-      const spacerSize = 14;
-      const imageDonutSize = { width: (height - spacerSize) / 2, height: (height - spacerSize) / 2 };
-      switch (R.parameters.style) {
-        default:
-        case 1:
-          // widget parameter: style=1
-          addWidgetRow(widget, width, 7,
-            [
-              imageForConsumptionMix(imageDonutSize),
-              imageForGridFeed(imageDonutSize),
-              imageForProductionMix(imageDonutSize),
-              imageForBatteryChargeLevel(imageDonutSize),
-            ]
-          );
-          widget.addSpacer(spacerSize);
-          addWidgetRow(widget, width, 0,
-            [
-              imageForProductionConsumptionMixTimeline({ width: width, height: (height - spacerSize) / 2 }),
-            ]
-          );
-          break;
-        case 2:
-          // widget parameter: style=2
-          widget.addSpacer(height / 2 / 2);
-          addWidgetRow(widget, width, 7,
-            [
-              imageForConsumptionMix(imageDonutSize),
-              imageForGridFeed(imageDonutSize),
-              imageForProductionMix(imageDonutSize),
-              imageForBatteryChargeLevel(imageDonutSize),
-            ]
-          );
-          widget.addSpacer(height / 2 / 2);
-          break;
-        case 3:
-          // widget parameter: style=3
-          addWidgetRow(widget, width, 0,
-            [
-              imageForProductionConsumptionMixTimeline({ width: width, height: height }),
-            ]
-          );
-          break;
+      break;
+    case 'medium':
+      {
+        const width = (329 - 16 * 2);
+        const height = (155 - 16 * 2);
+        const spacerSize = 14;
+        const imageDonutSize = { width: (height - spacerSize) / 2, height: (height - spacerSize) / 2 };
+        switch (R.parameters.style) {
+          default:
+          case 1:
+            // widget parameter: style=1
+            addWidgetRow(widget, width, 7,
+              [
+                imageForConsumptionMix(imageDonutSize),
+                imageForGridFeed(imageDonutSize),
+                imageForProductionMix(imageDonutSize),
+                imageForBatteryChargeLevel(imageDonutSize),
+              ]
+            );
+            widget.addSpacer(spacerSize);
+            addWidgetRow(widget, width, 0,
+              [
+                imageForProductionConsumptionMixTimeline({ width: width, height: (height - spacerSize) / 2 }),
+              ]
+            );
+            break;
+          case 2:
+            // widget parameter: style=2
+            widget.addSpacer(height / 2 / 2);
+            addWidgetRow(widget, width, 7,
+              [
+                imageForConsumptionMix(imageDonutSize),
+                imageForGridFeed(imageDonutSize),
+                imageForProductionMix(imageDonutSize),
+                imageForBatteryChargeLevel(imageDonutSize),
+              ]
+            );
+            widget.addSpacer(height / 2 / 2);
+            break;
+          case 3:
+            // widget parameter: style=3
+            addWidgetRow(widget, width, 0,
+              [
+                imageForProductionConsumptionMixTimeline({ width: width, height: height }),
+              ]
+            );
+            break;
+        }
       }
-    }
-    break;
+      break;
+  }
 }
 
 if (!config.runsInWidget) {
