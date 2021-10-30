@@ -507,6 +507,29 @@ function imageWithMultiSegmentDonutForData(size, data) {
   );
 };
 
+// multiple multi-segment donuts based on given data, without text
+function imageWithMultiSegmentDonutsForDataArray(size, dataArray) {
+  const dc = new DrawContext();
+  dc.size = new Size(size.width, size.height);
+  dc.opaque = false;
+  dc.respectScreenScale = true
+
+  let offset = 0;
+  for (let i = 0; i < dataArray.length; i++) {
+    const data = dataArray[i];
+    if (data) {
+      drawMultiSegmentDonut(dc,
+        { x: size.width / 2, y: size.height / 2, radius: (size.width - offset - 5.5) / 2, lineWidth: 5.5, maxValue: data.maxValue, color: new Color('444444', 0.5) },
+        data.segments,
+        null
+      );
+      offset += 20;
+    }
+  };
+
+  return dc.getImage();
+}
+
 // timeline --- consumption, grid feed, battery charge
 function imageForProductionConsumptionMixTimeline(size) {
   const segments = [
@@ -589,6 +612,7 @@ if (V.data.series) {
         const imageDonutSize = { width: (width - spacerSize) / 2, height: (width - spacerSize) / 2 };
         switch (R.parameters.style) {
           default:
+          case 1:
             addWidgetRow(widget, width, 0,
               [
                 imageWithMultiSegmentDonutForData(imageDonutSize, dataForMultiSegmentDonutConsumptionMix()),
@@ -600,6 +624,18 @@ if (V.data.series) {
               [
                 imageWithMultiSegmentDonutForData(imageDonutSize, dataForMultiSegmentDonutProductionMix()),
                 imageWithMultiSegmentDonutForData(imageDonutSize, dataForMultiSegmentDonutBatteryChargeLevel()),
+              ]
+            );
+            break;
+          case 4:
+            addWidgetRow(widget, width, 0,
+              [
+                imageWithMultiSegmentDonutsForDataArray({ width: width, height: width }, [
+                  dataForMultiSegmentDonutBatteryChargeLevel(),
+                  dataForMultiSegmentDonutGridFeed(),
+                  dataForMultiSegmentDonutProductionMix(),
+                  dataForMultiSegmentDonutConsumptionMix(),
+                ]),
               ]
             );
             break;
