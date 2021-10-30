@@ -421,63 +421,60 @@ const V = {
 };
 
 //
-// render the data
+// combine the data
 //
 
 // consumption mix --- photovoltaics consumption, battery consumption, grid consumption
-function imageForConsumptionMix(size) {
+function dataForMultiSegmentDonutConsumptionMix() {
   const segments = [
     { value: V.data.series.photovoltaics.consume.valuesSum, color: V.data.series.photovoltaics.consume.color },
     { value: V.data.series.battery.consume.valuesSum, color: V.data.series.battery.consume.color },
     { value: V.data.series.grid.consume.valuesSum, color: V.data.series.grid.consume.color }
   ];
   const sum = segments.reduce((sum, segment) => { return sum + segment.value }, 0.0);
-  const maxValue = Math.max(C.data.max.consumption, sum);
-
-  return imageWithMultiSegmentDonut(
-    size,
-    { x: size.width / 2, y: size.height / 2, radius: (size.width - 5.5) / 2, lineWidth: 5.5, maxValue: maxValue, color: new Color('444444', 0.5) },
+  return {
     segments,
-    { text: sum.toFixed(1), fontSize: 14, color: C.data.colors.consumption }
-  );
+    sum,
+    maxValue: Math.max(C.data.max.consumption, sum),
+    text: sum.toFixed(1),
+    textColor: C.data.colors.consumption,
+  };
 };
 
 // grid feed
-function imageForGridFeed(size) {
+function dataForMultiSegmentDonutGridFeed() {
   const segments = [
     { value: V.data.series.grid.feed.valuesSum, color: V.data.series.grid.feed.color },
   ];
   const sum = segments.reduce((sum, segment) => { return sum + segment.value }, 0.0);
-  const maxValue = Math.max(C.data.max.feed, sum);
-
-  return imageWithMultiSegmentDonut(
-    size,
-    { x: size.width / 2, y: size.height / 2, radius: (size.width - 5.5) / 2, lineWidth: 5.5, maxValue: maxValue, color: new Color('444444', 0.5) },
+  return {
     segments,
-    { text: sum.toFixed(1), fontSize: 14, color: V.data.series.grid.feed.color }
-  );
+    sum,
+    maxValue: Math.max(C.data.max.feed, sum),
+    text: sum.toFixed(1),
+    textColor: V.data.series.grid.feed.color,
+  };
 }
 
 // production mix --- photovoltaics consumption, battery charge, grid feed
-function imageForProductionMix(size) {
+function dataForMultiSegmentDonutProductionMix() {
   const segments = [
     { value: V.data.series.photovoltaics.consume.valuesSum, color: V.data.series.photovoltaics.consume.color },
     { value: V.data.series.battery.charge.valuesSum, color: V.data.series.battery.charge.color },
     { value: V.data.series.grid.feed.valuesSum, color: V.data.series.grid.feed.color },
   ];
   const sum = segments.reduce((sum, segment) => { return sum + segment.value }, 0.0);
-  const maxValue = Math.max(C.data.max.production, sum);
-
-  return imageWithMultiSegmentDonut(
-    size,
-    { x: size.width / 2, y: size.height / 2, radius: (size.width - 5.5) / 2, lineWidth: 5.5, maxValue: maxValue, color: new Color('444444', 0.5) },
+  return {
     segments,
-    { text: sum.toFixed(1), fontSize: 14, color: C.data.colors.production }
-  );
+    sum,
+    maxValue: Math.max(C.data.max.production, sum),
+    text: sum.toFixed(1),
+    textColor: C.data.colors.production,
+  };
 }
 
 // battery charge level
-function imageForBatteryChargeLevel(size) {
+function dataForMultiSegmentDonutBatteryChargeLevel() {
   if (!C.data.series.battery.level.query) {
     return null;
   }
@@ -485,14 +482,30 @@ function imageForBatteryChargeLevel(size) {
   const segments = [
     { value: level, color: V.data.series.battery.level.color },
   ];
+  return {
+    segments,
+    maxValue: 100.0,
+    text: level.toFixed(0) + '%',
+    textColor: V.data.series.battery.level.color,
+  }
+}
 
+//
+// render the data
+//
+
+// simple multi-segment donut based on given data
+function imageWithMultiSegmentDonutForData(size, data) {
+  if (!data) {
+    return null;
+  }
   return imageWithMultiSegmentDonut(
     size,
-    { x: size.width / 2, y: size.height / 2, radius: (size.width - 5.5) / 2, lineWidth: 5.5, maxValue: 100.0, color: new Color('444444', 0.5) },
-    segments,
-    { text: level.toFixed(0) + '%', fontSize: 14, color: V.data.series.battery.level.color }
+    { x: size.width / 2, y: size.height / 2, radius: (size.width - 5.5) / 2, lineWidth: 5.5, maxValue: data.maxValue, color: new Color('444444', 0.5) },
+    data.segments,
+    { text: data.text, fontSize: 14, color: data.textColor }
   );
-}
+};
 
 // timeline --- consumption, grid feed, battery charge
 function imageForProductionConsumptionMixTimeline(size) {
@@ -578,15 +591,15 @@ if (V.data.series) {
           default:
             addWidgetRow(widget, width, 0,
               [
-                imageForConsumptionMix(imageDonutSize),
-                imageForGridFeed(imageDonutSize),
+                imageWithMultiSegmentDonutForData(imageDonutSize, dataForMultiSegmentDonutConsumptionMix()),
+                imageWithMultiSegmentDonutForData(imageDonutSize, dataForMultiSegmentDonutGridFeed()),
               ]
             );
             widget.addSpacer(spacerSize);
             addWidgetRow(widget, width, 0,
               [
-                imageForProductionMix(imageDonutSize),
-                imageForBatteryChargeLevel(imageDonutSize),
+                imageWithMultiSegmentDonutForData(imageDonutSize, dataForMultiSegmentDonutProductionMix()),
+                imageWithMultiSegmentDonutForData(imageDonutSize, dataForMultiSegmentDonutBatteryChargeLevel()),
               ]
             );
             break;
@@ -605,10 +618,10 @@ if (V.data.series) {
             // widget parameter: style=1
             addWidgetRow(widget, width, 7,
               [
-                imageForConsumptionMix(imageDonutSize),
-                imageForGridFeed(imageDonutSize),
-                imageForProductionMix(imageDonutSize),
-                imageForBatteryChargeLevel(imageDonutSize),
+                imageWithMultiSegmentDonutForData(imageDonutSize, dataForMultiSegmentDonutConsumptionMix()),
+                imageWithMultiSegmentDonutForData(imageDonutSize, dataForMultiSegmentDonutGridFeed()),
+                imageWithMultiSegmentDonutForData(imageDonutSize, dataForMultiSegmentDonutProductionMix()),
+                imageWithMultiSegmentDonutForData(imageDonutSize, dataForMultiSegmentDonutBatteryChargeLevel()),
               ]
             );
             widget.addSpacer(spacerSize);
@@ -623,10 +636,10 @@ if (V.data.series) {
             widget.addSpacer(height / 2 / 2);
             addWidgetRow(widget, width, 7,
               [
-                imageForConsumptionMix(imageDonutSize),
-                imageForGridFeed(imageDonutSize),
-                imageForProductionMix(imageDonutSize),
-                imageForBatteryChargeLevel(imageDonutSize),
+                imageWithMultiSegmentDonutForData(imageDonutSize, dataForMultiSegmentDonutConsumptionMix()),
+                imageWithMultiSegmentDonutForData(imageDonutSize, dataForMultiSegmentDonutGridFeed()),
+                imageWithMultiSegmentDonutForData(imageDonutSize, dataForMultiSegmentDonutProductionMix()),
+                imageWithMultiSegmentDonutForData(imageDonutSize, dataForMultiSegmentDonutBatteryChargeLevel()),
               ]
             );
             widget.addSpacer(height / 2 / 2);
