@@ -79,6 +79,7 @@ const C = {
       consumption: Color.white(),
       production: Color.yellow(),
       productionYesterday: new Color('#aaaaaa', 0.5),
+      circle: new Color('#444444', 0.2),
     },
   },
 };
@@ -501,7 +502,7 @@ function imageWithMultiSegmentDonutForData(size, data) {
   }
   return imageWithMultiSegmentDonut(
     size,
-    { x: size.width / 2, y: size.height / 2, radius: (size.width - 5.5) / 2, lineWidth: 5.5, maxValue: data.maxValue, color: new Color('444444', 0.5) },
+    { x: size.width / 2, y: size.height / 2, radius: (size.width - 5.5) / 2, lineWidth: 5.5, maxValue: data.maxValue, color: C.data.colors.circle },
     data.segments,
     { text: data.text, fontSize: 14, color: data.textColor }
   );
@@ -519,7 +520,7 @@ function imageWithMultiSegmentDonutsForDataArray(size, dataArray) {
     const data = dataArray[i];
     if (data) {
       drawMultiSegmentDonut(dc,
-        { x: size.width / 2, y: size.height / 2, radius: (size.width - offset - 5.5) / 2, lineWidth: 5.5, maxValue: data.maxValue, color: new Color('444444', 0.5) },
+        { x: size.width / 2, y: size.height / 2, radius: (size.width - offset - 5.5) / 2, lineWidth: 5.5, maxValue: data.maxValue, color: C.data.colors.circle },
         data.segments,
         null
       );
