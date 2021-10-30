@@ -70,6 +70,7 @@ const C = {
     // max values to use when rendering the graphics
     max: {
       consumption: 15, // kWh
+      production: 30, // kWh
       feed: 25, // kWh
       sumPerSegment: 1, // kWh
     },
@@ -465,7 +466,7 @@ function imageForProductionMix(size) {
     { value: V.data.series.grid.feed.valuesSum, color: V.data.series.grid.feed.color },
   ];
   const sum = segments.reduce((sum, segment) => { return sum + segment.value }, 0.0);
-  const maxValue = sum;
+  const maxValue = Math.max(C.data.max.production, sum);
 
   return imageWithMultiSegmentDonut(
     size,

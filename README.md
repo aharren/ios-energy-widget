@@ -41,7 +41,7 @@ Visualized data:
 - Circles - from left to right / from top-left to bottom-right:
   - Consumption mix (in kWh): photovoltaics consumption (yellow), battery consumption (orange), grid consumption (red); with a full circle of 15 or sum
   - Grid feed (in kWh): energy fed into the grid (green); with a full circle of 25 or sum
-  - Production mix (in kWh): photovoltaics consumption (yellow), battery charge (blue), grid feed (green)
+  - Production mix (in kWh): photovoltaics consumption (yellow), battery charge (blue), grid feed (green); with a full circle of 30 or sum
   - Battery state: current battery charge level as percentage
  
  - Timeline:
