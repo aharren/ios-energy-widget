@@ -75,9 +75,9 @@ const C = {
     },
     // colors
     colors: {
-      photovoltaics: {
-        production: new Color('#aaaaaa', 0.5),
-      },
+      consumption: Color.white(),
+      production: Color.yellow(),
+      productionYesterday: new Color('#aaaaaa', 0.5),
     },
   },
 };
@@ -437,7 +437,7 @@ function imageForConsumptionMix(size) {
     size,
     { x: size.width / 2, y: size.height / 2, radius: (size.width - 5.5) / 2, lineWidth: 5.5, maxValue: maxValue, color: new Color('444444', 0.5) },
     segments,
-    { text: sum.toFixed(1), fontSize: 14, color: Color.white() }
+    { text: sum.toFixed(1), fontSize: 14, color: C.data.colors.consumption }
   );
 };
 
@@ -471,7 +471,7 @@ function imageForProductionMix(size) {
     size,
     { x: size.width / 2, y: size.height / 2, radius: (size.width - 5.5) / 2, lineWidth: 5.5, maxValue: maxValue, color: new Color('444444', 0.5) },
     segments,
-    { text: sum.toFixed(1), fontSize: 14, color: Color.white() }
+    { text: sum.toFixed(1), fontSize: 14, color: C.data.colors.production }
   );
 }
 
@@ -518,9 +518,9 @@ function imageForProductionConsumptionMixTimeline(size) {
         case 'today':
           return [
             // yesterday
-            { values: V.data.series.grid.feed.values.yesterday, color: C.data.colors.photovoltaics.production },
-            { values: V.data.series.battery.charge.values.yesterday, color: C.data.colors.photovoltaics.production },
-            { values: V.data.series.photovoltaics.consume.values.yesterday, color: C.data.colors.photovoltaics.production }
+            { values: V.data.series.grid.feed.values.yesterday, color: C.data.colors.productionYesterday },
+            { values: V.data.series.battery.charge.values.yesterday, color: C.data.colors.productionYesterday },
+            { values: V.data.series.photovoltaics.consume.values.yesterday, color: C.data.colors.productionYesterday }
           ];
       }
     })());
