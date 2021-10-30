@@ -19,7 +19,7 @@ const C = {
     // settings for the widget background and gradient colors
     background: {
       gradient: [
-        { location: 0, color: new Color('#181818') },
+        { location: 0, color: new Color('#101010') },
         { location: 1, color: new Color('#080808') },
       ],
     },
