@@ -10,9 +10,13 @@ Styles - selected via widget parameter:
 
 - Small:
 
-  - Single style; style parameter is ignored
+  - `style=1`
 
-    ![](readme-assets/example-small-0.png)
+    ![](readme-assets/example-small-1.png)
+
+  - `style=4`
+
+    ![](readme-assets/example-small-4.png)
 
 - Medium:
 
@@ -49,7 +53,7 @@ Visualized data:
 
 Widget parameters:
 
-* `style`: visual style of the widget; valid values: `1`, `2`, `3`
+* `style`: visual style of the widget; valid values: `1`, `2`, `3`, `4`
 * `time-range`: time range to display; valid values: `last-24h`, `today`
 
 Widget parameters are passed as `key1=value1;key2=value2;...`.
