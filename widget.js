@@ -41,6 +41,10 @@ const C = {
           query: 'SELECT difference(last("value")) / 1000 FROM "photovoltaics-energy-counter-consumption" WHERE ${time-range} GROUP BY ${time-interval} fill(null)', // kWh
           color: Color.yellow(),
         },
+        forecast: {
+          query: 'SELECT difference(last("value")) / 1000 FROM "photovoltaics-energy-counter-forecast" WHERE ${time-range-forecast} GROUP BY ${time-interval} fill(null)', // kWh
+          color: new Color('#aaaaaa', 0.5),
+        },
       },
       battery: {
         charge: {
@@ -108,7 +112,9 @@ const R = {
     return {
       timestampNow: now.getTime(),
       timestampNowMinus24h: now.getTime() - 1000 * 60 * 60 * 24,
+      timestampNowPlus24h: now.getTime() + 1000 * 60 * 60 * 24,
       timestampToday0h: (new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0)).getTime(),
+      timestampToday24h: (new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0)).getTime() + 1000 * 60 * 60 * 24,
       delta15min: 1000 * 60 * 15,
     }
   })(),
@@ -136,6 +142,7 @@ async function getSeriesValues(series) {
     // join the queries into a single ;-separated string and replace the time placeholders
     const q = queries.join(';')
       .replace(/\$\{time\-range\}/gi, ` (time >= ${R.time.timestampNowMinus24h - R.time.delta15min * 2}ms AND time <= ${R.time.timestampNow}ms) `)
+      .replace(/\$\{time\-range-forecast\}/gi, ` (time >= ${R.time.timestampNow - R.time.delta15min * 2}ms AND time <= ${R.time.timestampNowPlus24h}ms) `)
       .replace(/\$\{time\-interval\}/gi, ` time(15m) `)
       ;
     const url = `${C.data.server.url}/api/datasources/proxy/${C.data.dataSourceId}/query?db=${escapeURLSegment(C.data.database)}&epoch=ms&q=${escapeURLSegment(q)}`;
@@ -238,16 +245,23 @@ async function getSeriesValues(series) {
         all: new Array(96).fill(0),
         today: new Array(96).fill(0),
         yesterday: new Array(96).fill(0),
+        forecast: new Array(96).fill(0),
       };
-      for (let i = 0, timestamp = R.time.timestampNowMinus24h; i < 96; i++, timestamp += R.time.delta15min) {
+      for (let i = 0, timestamp = R.time.timestampNowMinus24h; i < 96 * 2; i++, timestamp += R.time.delta15min) {
         const value = results[timestamp] > 0 ? results[timestamp] : 0;
-        if (timestamp >= timestampStart) {
-          ra.all[i] = value;
-        }
-        if (timestamp < R.time.timestampToday0h) {
-          ra.yesterday[i] = value;
-        } else if (timestamp < timestampEnd) {
-          ra.today[i] = value;
+        if (i < 96) {
+          if (timestamp >= timestampStart) {
+            ra.all[i] = value;
+          }
+          if (timestamp < R.time.timestampToday0h) {
+            ra.yesterday[i] = value;
+          } else if (timestamp < timestampEnd) {
+            ra.today[i] = value;
+          }
+        } else {
+          if (timestamp < R.time.timestampToday24h) {
+            ra.forecast[i - 96] = value;
+          }
         }
       }
       return ra;
@@ -255,6 +269,7 @@ async function getSeriesValues(series) {
       //   all: [ a, b, c, ..., zz ],
       //   today: [ 0, 0, c, ..., zz ],
       //   yesterday: [ a, b, 0, ..., 0 ],
+      //   forecast: [ a, b, 0, ..., 0 ],
       // }
     }
 
@@ -285,6 +300,7 @@ async function getSeriesValues(series) {
     //          all: [ a, b, c, ..., zz ],
     //          today: [ 0, 0, c, ..., zz ],
     //          yesterday: [ a, b, 0, ..., 0 ],
+    //          forecast: [ a, b, 0, ..., 0 ],
     //       },
     //       color: ...,
     //       valuesLast: zz,
@@ -554,12 +570,19 @@ function imageForProductionConsumptionMixTimeline(size) {
             { values: V.data.series.photovoltaics.consume.values.yesterday, color: new Color(V.data.series.photovoltaics.consume.color.hex, 0.5) }
           ];
         case 'today':
-          return [
-            // yesterday
-            { values: V.data.series.grid.feed.values.yesterday, color: C.data.colors.productionYesterday },
-            { values: V.data.series.battery.charge.values.yesterday, color: C.data.colors.productionYesterday },
-            { values: V.data.series.photovoltaics.consume.values.yesterday, color: C.data.colors.productionYesterday }
-          ];
+          if (C.data.series.photovoltaics.forecast.query) {
+            return [
+              // forecast
+              { values: V.data.series.photovoltaics.forecast.values.forecast, color: C.data.series.photovoltaics.forecast.color },
+            ];
+          } else {
+            return [
+              // production data from yesterday
+              { values: V.data.series.grid.feed.values.yesterday, color: C.data.colors.productionYesterday },
+              { values: V.data.series.battery.charge.values.yesterday, color: C.data.colors.productionYesterday },
+              { values: V.data.series.photovoltaics.consume.values.yesterday, color: C.data.colors.productionYesterday }
+            ];
+          }
       }
     })());
 
