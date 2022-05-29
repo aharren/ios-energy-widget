@@ -43,7 +43,7 @@ const C = {
         },
         forecast: {
           query: 'SELECT difference(last("value")) / 1000 FROM "photovoltaics-energy-counter-forecast" WHERE ${time-range-forecast} GROUP BY ${time-interval} fill(null)', // kWh
-          color: new Color('#aaaaaa', 0.5),
+          color: new Color('#cccccc', 0.5),
         },
       },
       battery: {
@@ -142,7 +142,7 @@ async function getSeriesValues(series) {
     // join the queries into a single ;-separated string and replace the time placeholders
     const q = queries.join(';')
       .replace(/\$\{time\-range\}/gi, ` (time >= ${R.time.timestampNowMinus24h - R.time.delta15min * 2}ms AND time <= ${R.time.timestampNow}ms) `)
-      .replace(/\$\{time\-range-forecast\}/gi, ` (time >= ${R.time.timestampNow - R.time.delta15min * 2}ms AND time <= ${R.time.timestampNowPlus24h}ms) `)
+      .replace(/\$\{time\-range-forecast\}/gi, ` (time >= ${R.time.timestampToday0h}ms AND time <= ${R.time.timestampToday24h}ms) `)
       .replace(/\$\{time\-interval\}/gi, ` time(15m) `)
       ;
     const url = `${C.data.server.url}/api/datasources/proxy/${C.data.dataSourceId}/query?db=${escapeURLSegment(C.data.database)}&epoch=ms&q=${escapeURLSegment(q)}`;
@@ -240,7 +240,7 @@ async function getSeriesValues(series) {
             return R.time.timestampToday0h;
         }
       })();
-      const timestampEnd = R.time.timestampNow;
+      const timestampEnd = R.time.timestampToday24h;
       const ra = {
         all: new Array(96).fill(0),
         today: new Array(96).fill(0),
@@ -259,8 +259,8 @@ async function getSeriesValues(series) {
             ra.today[i] = value;
           }
         } else {
-          if (timestamp < R.time.timestampToday24h) {
-            ra.forecast[i - 96] = value;
+          if (results[timestamp]) {
+            ra.today[i] = value;
           }
         }
       }
@@ -269,7 +269,6 @@ async function getSeriesValues(series) {
       //   all: [ a, b, c, ..., zz ],
       //   today: [ 0, 0, c, ..., zz ],
       //   yesterday: [ a, b, 0, ..., 0 ],
-      //   forecast: [ a, b, 0, ..., 0 ],
       // }
     }
 
@@ -300,7 +299,6 @@ async function getSeriesValues(series) {
     //          all: [ a, b, c, ..., zz ],
     //          today: [ 0, 0, c, ..., zz ],
     //          yesterday: [ a, b, 0, ..., 0 ],
-    //          forecast: [ a, b, 0, ..., 0 ],
     //       },
     //       color: ...,
     //       valuesLast: zz,
@@ -416,15 +414,37 @@ function drawMultiSegmentChart(dc, rect, segments, maxSum, index0) {
   }
 }
 
-// render a multi-segment chart with stacked values as an image
-function imageWithMultiSegmentChart(size, rect, segments, maxSum, index0) {
-  const dc = new DrawContext();
-  dc.size = new Size(size.width, size.height);
-  dc.opaque = false;
-  dc.respectScreenScale = true
+function drawMultiSegmentLines(dc, rect, segments, maxSum, index0, indexMax, lineWidth) {
+  const count = indexMax - index0;
+  const w = rect.width / count;
+  const lr = w / 4;
 
-  drawMultiSegmentChart(dc, rect, segments, maxSum, index0);
-  return dc.getImage();
+  // for each x position, stack the values
+  const segmentPoints = [];
+  for (let j = 0; j < segments.length; j++) {
+    segmentPoints[j] = [];
+  }
+  for (let i = 0, x = rect.x; i < count; i++) {
+    const ri = (i + index0);
+    let baseValue = rect.height;
+    for (let j = segments.length - 1; j >= 0; j--) {
+      const value = (segments[j].values[ri] / maxSum) * rect.height;
+      baseValue -= value;
+      segmentPoints[j].push(new Point(x + lr, rect.y + baseValue));
+    }
+    x += w;
+  }
+  for (let j = 0; j < segments.length; j++) {
+    dc.setStrokeColor(segments[j].color);
+    dc.setLineWidth(lineWidth);
+    const path = new Path();
+    path.move(segmentPoints[0]);
+    for (let i = 1; i < segmentPoints[j].length; i++) {
+      path.addLine(segmentPoints[j][i]);
+    }
+    dc.addPath(path);
+    dc.strokePath();
+  }
 }
 
 //
@@ -551,10 +571,10 @@ function imageWithMultiSegmentDonutsForDataArray(size, dataArray) {
 function imageForProductionConsumptionMixTimeline(size) {
   const segments = [
     // today
-    { values: V.data.series.grid.feed.values.today, color: V.data.series.grid.feed.color },
-    { values: V.data.series.battery.charge.values.today, color: V.data.series.battery.charge.color },
     { values: V.data.series.grid.consume.values.today, color: V.data.series.grid.consume.color },
     { values: V.data.series.battery.consume.values.today, color: V.data.series.battery.consume.color },
+    { values: V.data.series.grid.feed.values.today, color: V.data.series.grid.feed.color },
+    { values: V.data.series.battery.charge.values.today, color: V.data.series.battery.charge.color },
     { values: V.data.series.photovoltaics.consume.values.today, color: V.data.series.photovoltaics.consume.color },
   ].concat(
     (() => {
@@ -563,37 +583,54 @@ function imageForProductionConsumptionMixTimeline(size) {
         case 'last-24h':
           return [
             // yesterday
-            { values: V.data.series.grid.feed.values.yesterday, color: new Color(V.data.series.grid.feed.color.hex, 0.5) },
-            { values: V.data.series.battery.charge.values.yesterday, color: new Color(V.data.series.battery.charge.color.hex, 0.5) },
             { values: V.data.series.grid.consume.values.yesterday, color: new Color(V.data.series.grid.consume.color.hex, 0.5) },
             { values: V.data.series.battery.consume.values.yesterday, color: new Color(V.data.series.battery.consume.color.hex, 0.5) },
+            { values: V.data.series.grid.feed.values.yesterday, color: new Color(V.data.series.grid.feed.color.hex, 0.5) },
+            { values: V.data.series.battery.charge.values.yesterday, color: new Color(V.data.series.battery.charge.color.hex, 0.5) },
             { values: V.data.series.photovoltaics.consume.values.yesterday, color: new Color(V.data.series.photovoltaics.consume.color.hex, 0.5) }
           ];
         case 'today':
-          if (C.data.series.photovoltaics.forecast.query) {
-            return [
-              // forecast
-              { values: V.data.series.photovoltaics.forecast.values.forecast, color: C.data.series.photovoltaics.forecast.color },
-            ];
-          } else {
-            return [
-              // production data from yesterday
-              { values: V.data.series.grid.feed.values.yesterday, color: C.data.colors.productionYesterday },
-              { values: V.data.series.battery.charge.values.yesterday, color: C.data.colors.productionYesterday },
-              { values: V.data.series.photovoltaics.consume.values.yesterday, color: C.data.colors.productionYesterday }
-            ];
-          }
+          return [
+            // production data from yesterday
+            { values: V.data.series.grid.feed.values.yesterday, color: C.data.colors.productionYesterday },
+            { values: V.data.series.battery.charge.values.yesterday, color: C.data.colors.productionYesterday },
+            { values: V.data.series.photovoltaics.consume.values.yesterday, color: C.data.colors.productionYesterday }
+          ];
       }
     })());
 
-  return imageWithMultiSegmentChart(
-    size,
+  const dc = new DrawContext();
+  dc.size = new Size(size.width, size.height);
+  dc.opaque = false;
+  dc.respectScreenScale = true
+
+  // let the timeline start at 0:00 today
+  const index0 = (R.time.timestampToday0h - R.time.timestampNowMinus24h) / R.time.delta15min;
+
+  drawMultiSegmentChart(
+    dc,
     { x: 0, y: 0, width: size.width, height: size.height },
     segments,
     C.data.max.sumPerSegment,
-    // let the timeline start at 0:00 today
-    (R.time.timestampToday0h - R.time.timestampNowMinus24h) / R.time.delta15min
+    index0
   );
+
+  if (C.data.series.photovoltaics.forecast.query) {
+    drawMultiSegmentLines(
+      dc,
+      { x: 0, y: 0, width: size.width, height: size.height },
+      [
+        // forecast
+        { values: V.data.series.photovoltaics.forecast.values.today, color: C.data.series.photovoltaics.forecast.color },
+      ],
+      C.data.max.sumPerSegment,
+      index0,
+      index0 + 96,
+      2
+    );
+  }
+
+  return dc.getImage();
 }
 
 //
