@@ -132,6 +132,21 @@ async function simulate(_script, _settings) {
     }
   }
 
+  // Point
+  class Point {
+    constructor(x, y) {
+      this._x = x;
+      this._y = y;
+    }
+
+    get x() {
+      return this._x;
+    }
+    get y() {
+      return this._y;
+    }
+  }
+
   // Rect
   class Rect {
     constructor(x, y, width, height) {
@@ -153,6 +168,22 @@ async function simulate(_script, _settings) {
     get height() {
       return this._height;
     }
+  }
+
+  // Path
+  class Path {
+    constructor() {
+      this._lines = [];
+    }
+
+    move(point) {
+      this._lines.push(point);
+    }
+
+    addLine(point) {
+      this._lines.push(point);
+    }
+
   }
 
   // Font
@@ -226,6 +257,23 @@ async function simulate(_script, _settings) {
       this._context.lineWidth = this._lineWidth;
       this._context.fillStyle = this._fillColor._rgba();
       this._context.fillRect(rect.x * _.scale, rect.y * _.scale, rect.width * _.scale, rect.height * _.scale);
+    }
+    addPath(path) {
+      this._path = path;
+    }
+    strokePath() {
+      if (this._path && this._path._lines.length > 0) {
+        const lines = this._path._lines;
+        this._context.lineWidth = this._lineWidth * _.scale;
+        this._context.strokeStyle = this._strokeColor._rgba();
+        this._context.beginPath();
+        this._context.moveTo(lines[0].x * _.scale, lines[0].y * _.scale);
+        for (let i = 1; i < lines.length; i++) {
+          this._context.lineTo(lines[i].x * _.scale, lines[i].y * _.scale);
+        }
+        this._context.stroke();
+      }
+      delete this._path;
     }
     setTextAlignedCenter() {
       this._textAlignment = 'center';
