@@ -444,7 +444,7 @@ function drawMultiSegmentLines(dc, rect, segments, maxSum, index0, indexMax, lin
     dc.setStrokeColor(segments[j].color);
     dc.setLineWidth(lineWidth);
     const path = new Path();
-    path.move(segmentPoints[0]);
+    path.move(segmentPoints[j][0]);
     for (let i = 1; i < segmentPoints[j].length; i++) {
       path.addLine(segmentPoints[j][i]);
     }
