@@ -178,7 +178,12 @@ async function getSeriesValues(series) {
     //   { ms-timestamp: value, ms-timestamp: value, ... },
     //   ...
     // ]
-    return results;
+    return {
+      results,
+      _raw: {
+        response,
+      },
+    }
   }
 
   // collect the queries from the given time series configuration and return them as an array
@@ -320,8 +325,9 @@ async function getSeriesValues(series) {
 
   try {
     const queries = createSeriesQueryArray(series);
-    const results = await executeQueries(queries);
-    const values = transformAndFilterResults(series, results);
+    const result = await executeQueries(queries);
+    const values = transformAndFilterResults(series, result.results);
+    values._raw = result._raw;
     return values;
   } catch (err) {
     console.error('query processing failed: ' + err);
@@ -763,6 +769,10 @@ if (!config.runsInWidget) {
       break;
     case 'medium':
       await widget.presentMedium();
+      break;
+    case '_raw.response':
+      await widget.presentMedium();
+      await widget._setRaw(JSON.stringify(V.data.series._raw.response));
       break;
   }
 }

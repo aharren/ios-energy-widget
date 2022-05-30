@@ -16,6 +16,7 @@ async function simulate(_script, _settings) {
         width: 1024,
         height: 1024,
       },
+      raw: '',
     },
 
     scale: 3,
@@ -350,6 +351,7 @@ async function simulate(_script, _settings) {
     constructor() {
       this._objects = [];
       this._family = 'small';
+      this._raw = '';
       this._borderRadius = 17;
       this._margin = { top: 16, left: 16 };
     }
@@ -363,13 +365,17 @@ async function simulate(_script, _settings) {
       this._objects.push({ type: 'spacer', size });
     }
 
-    presentSmall() {
+    async presentSmall() {
       this._family = 'small';
       this._borderRadius = 22;
     }
-    presentMedium() {
+    async presentMedium() {
       this._family = 'medium';
       this._borderRadius = 22;
+    }
+
+    async _setRaw(raw) {
+      this._raw = raw;
     }
 
     set backgroundGradient(gradient) {
@@ -490,6 +496,7 @@ async function simulate(_script, _settings) {
       _.output.image.height = size.height;
       _.output.image.scale = _.scale;
       _.output.image.ppi = 72 * _.scale;
+      _.output.raw = this._widget._raw;
     }
   }
 
