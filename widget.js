@@ -25,10 +25,23 @@ const C = {
     },
   },
   data: {
-    // connection details for the Grafana server; protocol, host, port, API key
-    server: {
-      url: 'https://grafana.local:3000',
-      apikey: 'APIKEY',
+    servers: {
+      grafana: {
+        // connection details for the Grafana server; protocol, host, port, API key
+        url: 'https://grafana.local:3000/api/datasources/proxy/${data-source-id}/query?db=${database-name}&epoch=ms&q=${queries}',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer GRAFANA_API_KEY`,
+        },
+      },
+      file: {
+        // connection details for a hosted file with the current measurements / Grafana query results
+        url: 'https://some.host/some.file',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Basic FILE_AUTH',
+        },
+      },
     },
     // id of the Grafana data source; check https://grafana.local:3000/api/datasources
     dataSourceId: 1,
@@ -101,6 +114,8 @@ const R = {
       style: parseInt(p.style) || C.widget.preview.parameters.style,
       // time-range=last-24h or today --- time range to display
       timeRange: p['time-range'] || C.widget.preview.parameters.timeRange,
+      // server=<name-of-server>
+      server: p.server || 'grafana',
     }
   })(),
   widget: {
@@ -145,14 +160,17 @@ async function getSeriesValues(series) {
       .replace(/\$\{time\-range-forecast\}/gi, ` (time >= ${R.time.timestampToday0h}ms AND time <= ${R.time.timestampToday24h}ms) `)
       .replace(/\$\{time\-interval\}/gi, ` time(15m) `)
       ;
-    const url = `${C.data.server.url}/api/datasources/proxy/${C.data.dataSourceId}/query?db=${escapeURLSegment(C.data.database)}&epoch=ms&q=${escapeURLSegment(q)}`;
+    
+    // get url for configured server and replace placeholders
+    const url = C.data.servers[R.parameters.server].url
+      .replace(/\$\{data\-source\-id\}/gi, C.data.dataSourceId)
+      .replace(/\$\{database\-name\}/gi, escapeURLSegment(C.data.database))
+      .replace(/\$\{queries\}/gi, escapeURLSegment(q))
+      ;
 
     // send the request with the queries to the server
     const request = new Request(url);
-    request.headers = {
-      'Accept': 'application/json',
-      'Authorization': `Bearer ${C.data.server.apikey}`,
-    }
+    request.headers = C.data.servers[R.parameters.server].headers;
 
     // retrieve the response
     const response = await request.loadJSON();
