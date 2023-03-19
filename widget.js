@@ -86,10 +86,10 @@ const C = {
     },
     // max values to use when rendering the graphics
     max: {
-      consumption: 15, // kWh
-      production: 30, // kWh
-      feed: 25, // kWh
-      sumPerSegment: 1, // kWh
+      consumption: 40, // kWh
+      production: 40, // kWh
+      feed: 40, // kWh
+      sumPerSegment: 1.3, // kWh
     },
     // colors
     colors: {
