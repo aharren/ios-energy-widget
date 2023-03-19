@@ -737,7 +737,7 @@ if (V.data.series) {
           default:
           case 1:
             // widget parameter: style=1
-            addWidgetRow(widget, width, 7,
+            addWidgetRow(widget, width, spacerSize / 2,
               [
                 imageWithMultiSegmentDonutForData(imageDonutSize, dataForMultiSegmentDonutConsumptionMix()),
                 imageWithMultiSegmentDonutForData(imageDonutSize, dataForMultiSegmentDonutGridFeed()),
@@ -755,7 +755,7 @@ if (V.data.series) {
           case 2:
             // widget parameter: style=2
             widget.addSpacer(height / 2 / 2);
-            addWidgetRow(widget, width, 7,
+            addWidgetRow(widget, width, spacerSize / 2,
               [
                 imageWithMultiSegmentDonutForData(imageDonutSize, dataForMultiSegmentDonutConsumptionMix()),
                 imageWithMultiSegmentDonutForData(imageDonutSize, dataForMultiSegmentDonutGridFeed()),
