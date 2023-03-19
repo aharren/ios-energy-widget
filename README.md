@@ -109,7 +109,7 @@ Scripts:
 
   Example:
   ```
-  node dev/server.js configured-widget.js
+  node dev/server.js configured-widget.js medium 'style=1'
   ```
   
   Just reload the web page to reload the widget file and get it rendered.

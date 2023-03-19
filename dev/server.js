@@ -9,11 +9,13 @@ const fs = require("fs");
 const child_process = require('child_process');
 const simulate = require('./lib/simulate.js');
 
-if (process.argv.length < 3) {
-  console.log('usage: node server.js <filename-of-widget>');
+if (process.argv.length < 4) {
+  console.log('usage: node server.js <filename-of-widget> <widget-family> [<widget-parameter-string>]');
   process.exit(-1);
 }
 const widget = process.argv[2];
+const widgetFamily = process.argv[3];
+const widgetParameter = process.argv[4] || '';
 
 // host and port settings for the web server
 const host = 'localhost';
@@ -39,8 +41,8 @@ const server = http.createServer(async (request, response) => {
         // at /widget, we render the widget and return its image and console output
         const script = fs.readFileSync(widget);
         const settings = {
-          widgetParameter: '',
-          widgetFamily: '',
+          widgetFamily,
+          widgetParameter,
         }
         const output = await simulate(script, settings);
         response.writeHead(200, { 'Content-Type': 'application/json' });
