@@ -1,8 +1,8 @@
 # iOS Energy Widget
 
-A [Scriptable.app](https://scriptable.app)-based iOS widget which visualizes the energy production and energy consumption of your house from the last 24 hours.
+A [Scriptable.app](https://scriptable.app)-based iOS widget which visualizes the energy production and energy consumption of your house from the last 24 hours, including forecast data.
 
-Data is read from a Grafana server with an InfluxDB time-series database as data store.
+Data is read from a Grafana server with an InfluxDB time-series database as data store, or from a regulary updated, server-hosted file.
 
 ## Example
 
@@ -50,6 +50,7 @@ Visualized data:
  
  - Timeline:
    - Stacked values in 15-minutes intervals
+   - A gray line visualizes the forecast data
 
 Widget parameters:
 
