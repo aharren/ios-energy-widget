@@ -52,6 +52,8 @@ Visualized data:
    - Stacked values in 15-minutes intervals
    - A gray line visualizes the forecast data
 
+## Runtime Configuration
+
 Widget parameters:
 
 * `style`: visual style of the widget; valid values: `1`, `2`, `3`, `4`
@@ -60,11 +62,11 @@ Widget parameters:
 
 Widget parameters are passed as `key1=value1;key2=value2;...`.
 
-## Configuration
+## Static Configuration
 
 To configure the widget, edit the `C` constant in the configuration section of the widget.
 
-Time series, based on 15min intervals:
+Time-series, based on 15min intervals:
 
 * `photovoltaics: consume:`: Photovoltaics energy, directly consumed by your house
 * `photovoltaics: forecast:`: Forecast of the photovoltaics energy production (optional)
@@ -74,10 +76,40 @@ Time series, based on 15min intervals:
 * `grid: feed:`: Energy fed into the power grid
 * `grid: consume:`: Energy consumed from the power grid
 
-For optional time series, just remove the `query` field.
+For optional time-series, just remove the `query` field.
 
 Servers:
 
 * `servers: grafana:`: Connection details for the Grafana server
 * `servers: file:`: Connection details for a server-hosted file with the current measurements / Grafana query results
 
+## Tools for Offline Rendering and Configuration
+
+The `dev` folder contains a development environment for offline rendering of the widget, without an iOS device. For this, the development environment implements some of the `Scriptable.app` APIs and renders the widget via the `canvas` library. Note that the API coverage is not complete and the rendering is not 100% pixel perfect.
+
+To install the development environment, install Node.js, and then run `npm install` inside the `dev` folder.
+
+Scripts:
+
+* `render-png.js`: Renders a PNG image from the widget
+
+  Example:
+  ```
+  node dev/render-png.js configured-widget.js medium 'style=1;time-range=last-24h' 0.333 > image.png
+  ```
+
+* `render-data-file.js`: Renders a time-series data file which can be uploaded to a server and consumed by a `file` configuration of the widget
+
+  Example:
+  ```
+  node dev/render-data-file.js configured-widget.js 'server=grafana' > data.js
+  ```
+
+* `server.js`: Starts a web server which renders the widget, and a web browser which triggers rendering of the widget and displays the rendered widget
+
+  Example:
+  ```
+  node dev/server.js configured-widget.js
+  ```
+  
+  Just reload the web page to reload the widget file and get it rendered.
