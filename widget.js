@@ -564,7 +564,7 @@ function imageWithMultiSegmentDonutForData(size, data) {
     size,
     { x: size.width / 2, y: size.height / 2, radius: (size.width - 5.5) / 2, lineWidth: 5.5, maxValue: data.maxValue, color: C.data.colors.circle },
     data.segments,
-    { text: data.text, fontSize: 14, color: data.textColor }
+    { text: data.text, fontSize: 12, color: data.textColor }
   );
 };
 
