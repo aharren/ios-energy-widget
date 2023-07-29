@@ -7,6 +7,8 @@ async function simulate(_script, _settings) {
     lib: {
       got: require('got'),
       canvas: require('canvas'),
+      fs: require('fs'),
+      path: require('path'),
     },
 
     output: {
@@ -321,6 +323,53 @@ async function simulate(_script, _settings) {
         this.__context = this._canvas.getContext('2d');
       }
       return this.__context;
+    }
+  }
+
+  // LocalFileManager
+  class LocalFileManager {
+    constructor() {
+      this._root = _.lib.path.join(process.cwd(), '.fs');
+      this._documents = 'documents';
+
+      _.lib.fs.mkdirSync(this._root, { recursive: true });
+      _.lib.fs.mkdirSync(this._pathTo(this._documents), { recursive: true });
+    }
+
+    documentsDirectory() {
+      return this._documents;
+    }
+
+    joinPath(lhs, rhs) {
+      return _.lib.path.join(lhs, rhs);
+    }
+
+    readString(path) {
+      try {
+        _.lib.fs.readFileSync(this._pathTo(path), { encoding: 'UTF-8' });
+      } catch (err) {
+        return null;
+      }
+    }
+
+    writeString(path, string) {
+      _.lib.fs.writeFileSync(this._pathTo(path), string, { encoding: 'UTF-8' });
+    }
+
+    _pathTo(path) {
+      return _.lib.path.join(this._root, path);
+    }
+  }
+
+  // FileManager
+  class FileManager {
+    static _local = null;
+
+    static local() {
+      if (!FileManager._local) {
+        FileManager._local = new LocalFileManager();
+      }
+      return FileManager._local;
     }
   }
 
