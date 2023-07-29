@@ -346,7 +346,7 @@ async function simulate(_script, _settings) {
 
     readString(path) {
       try {
-        _.lib.fs.readFileSync(this._pathTo(path), { encoding: 'UTF-8' });
+        return _.lib.fs.readFileSync(this._pathTo(path), { encoding: 'UTF-8' });
       } catch (err) {
         return null;
       }
